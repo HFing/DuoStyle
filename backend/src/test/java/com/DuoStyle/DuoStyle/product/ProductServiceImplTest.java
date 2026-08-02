@@ -6,10 +6,13 @@ import com.DuoStyle.DuoStyle.dto.response.PageResponse;
 import com.DuoStyle.DuoStyle.dto.response.ProductResponse;
 import com.DuoStyle.DuoStyle.entity.Category;
 import com.DuoStyle.DuoStyle.entity.Product;
+import com.DuoStyle.DuoStyle.entity.ProductVariant;
 import com.DuoStyle.DuoStyle.enums.ClothingSize;
 import com.DuoStyle.DuoStyle.enums.GenderTarget;
 import com.DuoStyle.DuoStyle.exception.CustomException;
 import com.DuoStyle.DuoStyle.repository.CategoryRepository;
+import com.DuoStyle.DuoStyle.repository.CartItemRepository;
+import com.DuoStyle.DuoStyle.repository.OrderItemRepository;
 import com.DuoStyle.DuoStyle.repository.ProductRepository;
 import com.DuoStyle.DuoStyle.service.impl.ProductServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +40,12 @@ class ProductServiceImplTest {
 
     @Mock
     private CategoryRepository categoryRepository;
+
+    @Mock
+    private CartItemRepository cartItemRepository;
+
+    @Mock
+    private OrderItemRepository orderItemRepository;
 
     @Mock
     private com.DuoStyle.DuoStyle.repository.ReviewRepository reviewRepository;
@@ -131,18 +140,87 @@ class ProductServiceImplTest {
     @Test
     @DisplayName("updateProduct - Successfully update existing product")
     void testUpdateProduct_Success() {
+        Category newCategory = Category.builder().id(2L).name("Jackets").slug("jackets").build();
+        ProductVariant existingVariant = ProductVariant.builder()
+                .id(31L)
+                .product(sampleProduct)
+                .size(ClothingSize.M)
+                .color("Black")
+                .sku("SHIRT-M")
+                .price(new BigDecimal("1500000"))
+                .stockQuantity(2)
+                .build();
+        sampleProduct.setVariants(new ArrayList<>(List.of(existingVariant)));
+
         ProductRequest request = new ProductRequest();
         request.setName("Áo Sơ Mi Cập Nhật");
+        request.setSlug("ao-so-mi-cap-nhat");
+        request.setDescription("Updated");
         request.setBasePrice(new BigDecimal("1800000"));
         request.setGenderTarget(GenderTarget.MEN);
+        request.setCategoryId(2L);
+
+        ProductVariantRequest existingRequest = new ProductVariantRequest();
+        existingRequest.setId(31L);
+        existingRequest.setSize(ClothingSize.M);
+        existingRequest.setColor("Navy");
+        existingRequest.setSku("SHIRT-M");
+        existingRequest.setPrice(new BigDecimal("1800000"));
+        existingRequest.setStockQuantity(8);
+
+        ProductVariantRequest newRequest = new ProductVariantRequest();
+        newRequest.setSize(ClothingSize.L);
+        newRequest.setColor("Navy");
+        newRequest.setSku("SHIRT-L");
+        newRequest.setPrice(new BigDecimal("1800000"));
+        newRequest.setStockQuantity(5);
+        request.setVariants(List.of(existingRequest, newRequest));
 
         when(productRepository.findById(10L)).thenReturn(Optional.of(sampleProduct));
+        when(categoryRepository.findById(2L)).thenReturn(Optional.of(newCategory));
         when(productRepository.save(any(Product.class))).thenReturn(sampleProduct);
 
         ProductResponse response = productService.updateProduct(10L, request);
 
         assertNotNull(response);
+        assertSame(newCategory, sampleProduct.getCategory());
+        assertEquals(2, sampleProduct.getVariants().size());
+        assertSame(existingVariant, sampleProduct.getVariants().get(0));
+        assertEquals(8, existingVariant.getStockQuantity());
+        assertEquals("Navy", existingVariant.getColor());
+        assertNull(sampleProduct.getVariants().get(1).getId());
+        assertSame(sampleProduct, sampleProduct.getVariants().get(1).getProduct());
         verify(productRepository, times(1)).save(sampleProduct);
+    }
+
+    @Test
+    @DisplayName("updateProduct - Reject removing a variant referenced by an order")
+    void testUpdateProduct_RejectsRemovingReferencedVariant() {
+        ProductVariant existingVariant = ProductVariant.builder()
+                .id(31L)
+                .product(sampleProduct)
+                .size(ClothingSize.M)
+                .stockQuantity(2)
+                .build();
+        sampleProduct.setVariants(new ArrayList<>(List.of(existingVariant)));
+
+        ProductRequest request = new ProductRequest();
+        request.setName(sampleProduct.getName());
+        request.setSlug(sampleProduct.getSlug());
+        request.setBasePrice(sampleProduct.getBasePrice());
+        request.setGenderTarget(sampleProduct.getGenderTarget());
+        request.setCategoryId(sampleCategory.getId());
+        request.setVariants(List.of());
+
+        when(productRepository.findById(10L)).thenReturn(Optional.of(sampleProduct));
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(sampleCategory));
+        when(orderItemRepository.existsByProductVariant_Id(31L)).thenReturn(true);
+
+        CustomException exception = assertThrows(CustomException.class,
+                () -> productService.updateProduct(10L, request));
+
+        assertEquals(409, exception.getStatus());
+        verify(productRepository, never()).save(any());
     }
 
     @Test

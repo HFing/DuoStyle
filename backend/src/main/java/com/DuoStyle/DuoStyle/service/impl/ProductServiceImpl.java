@@ -12,6 +12,8 @@ import com.DuoStyle.DuoStyle.enums.ClothingSize;
 import com.DuoStyle.DuoStyle.enums.GenderTarget;
 import com.DuoStyle.DuoStyle.exception.CustomException;
 import com.DuoStyle.DuoStyle.repository.CategoryRepository;
+import com.DuoStyle.DuoStyle.repository.CartItemRepository;
+import com.DuoStyle.DuoStyle.repository.OrderItemRepository;
 import com.DuoStyle.DuoStyle.repository.ProductRepository;
 import com.DuoStyle.DuoStyle.repository.ReviewRepository;
 import com.DuoStyle.DuoStyle.service.ProductService;
@@ -25,7 +27,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +40,8 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ReviewRepository reviewRepository;
+    private final CartItemRepository cartItemRepository;
+    private final OrderItemRepository orderItemRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -118,6 +126,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public ProductResponse updateProduct(Long id, ProductRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new CustomException(404, "Product not found"));
@@ -129,22 +138,76 @@ public class ProductServiceImpl implements ProductService {
         product.setThumbnailUrl(request.getThumbnailUrl());
         product.setGenderTarget(request.getGenderTarget());
 
-        if (request.getImages() != null && !request.getImages().isEmpty()) {
-            List<ProductImage> imageEntities = new ArrayList<>();
+        Category category = request.getCategoryId() == null
+                ? null
+                : categoryRepository.findById(request.getCategoryId())
+                        .orElseThrow(() -> new CustomException(404, "Category not found"));
+        product.setCategory(category);
+
+        if (request.getImages() != null) {
+            if (product.getImages() == null) product.setImages(new ArrayList<>());
+            product.getImages().clear();
             boolean isFirst = true;
             for (String url : request.getImages()) {
-                imageEntities.add(ProductImage.builder()
+                product.getImages().add(ProductImage.builder()
                         .product(product)
                         .imageUrl(url)
                         .isPrimary(isFirst)
                         .build());
                 isFirst = false;
             }
-            product.setImages(imageEntities);
         }
+
+        if (request.getVariants() != null) synchronizeVariants(product, request);
 
         productRepository.save(product);
         return mapToResponse(product);
+    }
+
+    private void synchronizeVariants(Product product, ProductRequest request) {
+        if (product.getVariants() == null) product.setVariants(new ArrayList<>());
+
+        Map<Long, ProductVariant> existingById = new HashMap<>();
+        for (ProductVariant variant : product.getVariants()) {
+            if (variant.getId() != null) existingById.put(variant.getId(), variant);
+        }
+
+        Set<Long> retainedIds = new HashSet<>();
+        List<ProductVariant> additions = new ArrayList<>();
+        request.getVariants().forEach(variantRequest -> {
+            ProductVariant variant;
+            if (variantRequest.getId() == null) {
+                variant = new ProductVariant();
+                variant.setProduct(product);
+                additions.add(variant);
+            } else {
+                variant = existingById.get(variantRequest.getId());
+                if (variant == null) {
+                    throw new CustomException(400, "Variant does not belong to this product");
+                }
+                retainedIds.add(variantRequest.getId());
+            }
+
+            variant.setSize(variantRequest.getSize());
+            variant.setColor(variantRequest.getColor());
+            variant.setSku(variantRequest.getSku());
+            variant.setPrice(variantRequest.getPrice() != null ? variantRequest.getPrice() : request.getBasePrice());
+            variant.setStockQuantity(variantRequest.getStockQuantity());
+        });
+
+        List<ProductVariant> removals = product.getVariants().stream()
+                .filter(variant -> variant.getId() != null && !retainedIds.contains(variant.getId()))
+                .toList();
+        for (ProductVariant variant : removals) {
+            boolean referenced = orderItemRepository.existsByProductVariant_Id(variant.getId())
+                    || cartItemRepository.existsByProductVariant_Id(variant.getId());
+            if (referenced) {
+                throw new CustomException(409, "Cannot remove a variant referenced by a cart or order");
+            }
+        }
+
+        product.getVariants().removeAll(removals);
+        product.getVariants().addAll(additions);
     }
 
     @Override

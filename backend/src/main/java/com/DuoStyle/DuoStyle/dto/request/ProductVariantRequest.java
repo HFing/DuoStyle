@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 
 @Data
 public class ProductVariantRequest {
+    private Long id;
     private ClothingSize size;
     private String color;
     private String sku;

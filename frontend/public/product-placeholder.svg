@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" role="img" aria-labelledby="title description">
+  <title id="title">Sản phẩm chưa có ảnh</title>
+  <desc id="description">Ảnh giữ chỗ trung tính của DuoStyle</desc>
+  <rect width="400" height="500" fill="#f2f0eb"/>
+  <path d="M128 180h144l34 44-25 28-21-17v112H140V235l-21 17-25-28 34-44Z" fill="none" stroke="#8b867c" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M166 180c4 22 15 34 34 34s30-12 34-34" fill="none" stroke="#8b867c" stroke-width="8" stroke-linecap="round"/>
+  <text x="200" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#68635b">DUOSTYLE</text>
+  <text x="200" y="434" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#8b867c">CHƯA CÓ ẢNH SẢN PHẨM</text>
+</svg>
