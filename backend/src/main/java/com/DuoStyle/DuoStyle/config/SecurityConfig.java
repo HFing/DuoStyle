@@ -10,6 +10,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -25,6 +26,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -65,21 +67,24 @@ public class SecurityConfig {
         http
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED))
+            )
             .authenticationProvider(authenticationProvider)
             .authorizeHttpRequests(auth -> auth
                 // Public Endpoints
-                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/me", "/api/v1/auth/logout").permitAll()
+                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register").permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/vouchers/**").permitAll()
-                .requestMatchers("/api/v1/vouchers/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/banners", "/api/v1/vouchers").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/products/*/reviews").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/payments/vnpay-return").permitAll()
-                
+                .requestMatchers("/api/v1/ai/**").permitAll()
+
                 // Admin Only Endpoints
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
-                // Authenticated Endpoints
-                .requestMatchers("/api/v1/cart/**", "/api/v1/orders/**", "/api/v1/wishlist/**").authenticated()
-                .anyRequest().permitAll()
+                // Authenticated Endpoints Baseline
+                .anyRequest().authenticated()
             )
             .oauth2Login(oauth -> oauth
                     .userInfoEndpoint(userInfo -> userInfo.oidcUserService(googleOidcUserService))
