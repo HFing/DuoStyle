@@ -15,7 +15,8 @@ function ChatMarkdown({ content }: { content: string }) {
     {parseChatMarkdown(content).map((block, index) => {
       if (block.type === 'ul') return <ul key={index} className="list-disc pl-5 space-y-1">{block.items.map((item, itemIndex) => <li key={itemIndex}><InlineMarkdown tokens={item} /></li>)}</ul>;
       if (block.type === 'ol') return <ol key={index} className="list-decimal pl-5 space-y-1">{block.items.map((item, itemIndex) => <li key={itemIndex}><InlineMarkdown tokens={item} /></li>)}</ol>;
-      return <p key={index}><InlineMarkdown tokens={block.content} /></p>;
+      if (block.type === 'p') return <p key={index}><InlineMarkdown tokens={block.content} /></p>;
+      return null;
     })}
   </div>;
 }

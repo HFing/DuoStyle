@@ -15,27 +15,10 @@ import AdminVouchersTab from '../components/admin/AdminVouchersTab';
 import AdminBannersTab from '../components/admin/AdminBannersTab';
 import AdminReviewsTab from '../components/admin/AdminReviewsTab';
 import { normalizeAdminOrders } from '../utils/admin-orders';
+import { buildProductRequest, buildStockProductRequest, createAdminApi, validateProductDraft } from '../utils/admin-api';
+import { buildCategoryGroups, findCategoryGroup, firstSelectableCategory } from '../utils/category-selection';
 
-// Static Sub-Category Mapping for Products
-const CATEGORY_MAP: Record<string, { id: number; name: string }[]> = {
-  MEN: [
-    { id: 1, name: 'Áo Sơ Mi (Shirts)' },
-    { id: 2, name: 'Áo Vest & Blazer (Suits)' },
-    { id: 3, name: 'Quần Âu (Trousers)' },
-    { id: 4, name: 'Áo Măng Tô & Khác' },
-  ],
-  WOMEN: [
-    { id: 5, name: 'Đầm Lụa & Dạ Hội (Dresses)' },
-    { id: 6, name: 'Áo Kiểu & Sơ Mi Nữ (Blouses)' },
-    { id: 7, name: 'Chân Váy (Skirts)' },
-    { id: 8, name: 'Quần Nữ & Vest Nữ' },
-  ],
-  UNISEX: [
-    { id: 9, name: 'Túi Xách Da Cao Cấp (Handbags)' },
-    { id: 10, name: 'Nước Hoa Độc Quyền (Perfume)' },
-    { id: 11, name: 'Kính Mát & Phụ Kiện' },
-  ],
-};
+const adminApi = createAdminApi(api);
 
 export default function AdminDashboardPage({ onNavigate, user, showToast, onLogout }: any) {
   const [activeTab, setActiveTab] = useState('analytics');
@@ -97,33 +80,29 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
   // New Size State for Edit Stock Modal
   const [addSizeName, setAddSizeName] = useState('S');
   const [addSizeCustom, setAddSizeCustom] = useState('');
-  const [addSizeStock, setAddSizeStock] = useState<any>(10);
+  const [addSizeStock, setAddSizeStock] = useState<any>(0);
   const [newStockValues, setNewStockValues] = useState<Record<string, number>>({});
 
   // New Product Form State
   const [newProdName, setNewProdName] = useState('');
   const [newProdGender, setNewProdGender] = useState('MEN');
-  const [newProdSubCatId, setNewProdSubCatId] = useState<any>(1);
-  const [newProdPrice, setNewProdPrice] = useState('2500000');
-  const [newProdColor, setNewProdColor] = useState('Đen (Classic Black)');
-  const [newProdSku, setNewProdSku] = useState('DS-PROD-01');
-  const [newProdDesc, setNewProdDesc] = useState(
-    'Sản phẩm thời trang thiết kế cao cấp DuoStyle với chất liệu wool thượng hạng.'
-  );
-  const [newProdMaterial, setNewProdMaterial] = useState('100% Cashmere Wool, Lót lụa cao cấp');
+  const [newProdSubCatId, setNewProdSubCatId] = useState<any>('');
+  const [newProdPrice, setNewProdPrice] = useState('');
+  const [newProdColor, setNewProdColor] = useState('');
+  const [newProdSku, setNewProdSku] = useState('');
+  const [newProdDesc, setNewProdDesc] = useState('');
+  const [newProdMaterial, setNewProdMaterial] = useState('');
 
   // Image Upload States
-  const [primaryImage, setPrimaryImage] = useState(
-    'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1200&q=90'
-  );
+  const [primaryImage, setPrimaryImage] = useState('');
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [uploadingPrimary, setUploadingPrimary] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
 
   // New Product Size Stocks State
   const [newProdSizeS, setNewProdSizeS] = useState<any>(0);
-  const [newProdSizeM, setNewProdSizeM] = useState<any>(15);
-  const [newProdSizeL, setNewProdSizeL] = useState<any>(10);
+  const [newProdSizeM, setNewProdSizeM] = useState<any>(0);
+  const [newProdSizeL, setNewProdSizeL] = useState<any>(0);
   const [newProdSizeXL, setNewProdSizeXL] = useState<any>(0);
 
   // Admin Detail Edit Product State
@@ -139,7 +118,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
   const [detailGalleryImgs, setDetailGalleryImgs] = useState<string[]>([]);
   const [detailVariants, setDetailVariants] = useState<any[]>([]);
   const [detailAddSize, setDetailAddSize] = useState('S');
-  const [detailAddSizeStock, setDetailAddSizeStock] = useState<any>(10);
+  const [detailAddSizeStock, setDetailAddSizeStock] = useState<any>(0);
 
   // Category Management State
   const [categoryTree, setCategoryTree] = useState<any[]>([]);
@@ -154,7 +133,18 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
     api
       .get('/categories/tree')
       .then((res) => {
-        if (res.data?.data) setCategoryTree(res.data.data);
+        if (res.data?.data) {
+          const tree = res.data.data;
+          const groups = buildCategoryGroups(tree);
+          setCategoryTree(tree);
+          setNewProdSubCatId((current: any) => {
+            if (findCategoryGroup(groups, current)) return current;
+            const group = groups[0];
+            const category = firstSelectableCategory(group);
+            if (group) setNewProdGender(group.genderTarget);
+            return category?.id ?? '';
+          });
+        }
       })
       .catch((err) => console.log('Error fetching categories'));
   };
@@ -167,7 +157,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
           setProducts(res.data.data.content);
         }
       })
-      .catch((err) => console.log('Using static sample products'));
+      .catch(() => setProducts([]));
 
     api
       .get('/admin/users')
@@ -176,7 +166,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
           setUsersList(res.data.data);
         }
       })
-      .catch((err) => console.log('Using seeded initial sample users list'));
+      .catch(() => setUsersList([]));
 
     fetchCategories();
   }, []);
@@ -191,20 +181,16 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
   };
 
   const fetchMonthlySales = () => {
-    api
-      .get('/admin/analytics/monthly-sales')
-      .then((res) => {
-        if (res.data?.data) setMonthlySales(res.data.data);
-      })
+    adminApi
+      .getMonthlySales()
+      .then(setMonthlySales)
       .catch((err) => console.log('Monthly sales load error'));
   };
 
   const fetchTopProducts = () => {
-    api
-      .get('/admin/analytics/top-products')
-      .then((res) => {
-        if (res.data?.data) setTopProducts(res.data.data);
-      })
+    adminApi
+      .getTopProducts()
+      .then(setTopProducts)
       .catch((err) => console.log('Top products load error'));
   };
 
@@ -227,28 +213,23 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
   }, []);
 
   const fetchAdminBanners = () => {
-    api
-      .get('/banners/admin/all')
-      .then((res) => {
-        if (res.data?.data) setAdminBanners(res.data.data);
-      })
+    adminApi
+      .getBanners()
+      .then(setAdminBanners)
       .catch((err) => console.log('Admin banners load error'));
   };
 
   const fetchAdminReviews = () => {
-    const params = new URLSearchParams();
-    params.append('page', String(reviewsPage - 1));
-    params.append('size', '10');
-    if (adminReviewSearch.trim()) params.append('query', adminReviewSearch.trim());
-    if (adminReviewRatingFilter) params.append('rating', adminReviewRatingFilter);
-
-    api
-      .get(`/reviews/admin/all?${params.toString()}`)
-      .then((res) => {
-        if (res.data?.data) {
-          setAdminReviews(res.data.data.content || []);
-          setTotalReviewsPages(res.data.data.totalPages || 1);
-        }
+    adminApi
+      .getReviews({
+        page: reviewsPage - 1,
+        size: 10,
+        ...(adminReviewSearch.trim() ? { search: adminReviewSearch.trim() } : {}),
+        ...(adminReviewRatingFilter ? { rating: Number(adminReviewRatingFilter) } : {}),
+      })
+      .then((page) => {
+        setAdminReviews(page.content);
+        setTotalReviewsPages(page.totalPages);
       })
       .catch((err) => console.log('Admin reviews load error'));
   };
@@ -261,8 +242,8 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
 
   const handleToggleReviewActive = async (review: any) => {
     try {
-      const res = await api.put(`/reviews/admin/${review.id}/toggle-active`);
-      if (res.data?.data) {
+      const updated = await adminApi.toggleReview(review.id);
+      if (updated) {
         if (showToast) showToast('Đã cập nhật trạng thái hiển thị đánh giá!', 'success');
         fetchAdminReviews();
       }
@@ -276,10 +257,8 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
     e.preventDefault();
     if (!replyingReview) return;
     try {
-      const res = await api.put(`/reviews/admin/${replyingReview.id}/reply`, {
-        adminReply: replyText,
-      });
-      if (res.data?.data) {
+      const updated = await adminApi.replyToReview(replyingReview.id, replyText);
+      if (updated) {
         if (showToast) showToast('Đã lưu phản hồi đánh giá thành công!', 'success');
         setReplyingReview(null);
         setReplyText('');
@@ -302,8 +281,8 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
 
   const handleToggleBannerActive = async (b: BannerData) => {
     try {
-      const res = await api.put(`/banners/admin/${b.id}/toggle-active`);
-      if (res.data?.data) {
+      const updated = await adminApi.toggleBanner(Number(b.id));
+      if (updated) {
         if (showToast) showToast('Đã cập nhật trạng thái Banner!', 'success');
         fetchAdminBanners();
       }
@@ -315,7 +294,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
   const handleDeleteBanner = async (b: BannerData) => {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa Banner "${b.title || 'này'}" không?`)) return;
     try {
-      await api.delete(`/banners/admin/${b.id}`);
+      await adminApi.deleteBanner(Number(b.id));
       if (showToast) showToast('Đã xóa Banner thành công!', 'success');
       fetchAdminBanners();
     } catch (err: any) {
@@ -323,8 +302,13 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
     }
   };
 
-  const handleSaveBannerSuccess = () => {
-    setIsBannerModalOpen(false);
+  const handleSaveBanner = async (banner: BannerData) => {
+    if (editingBanner?.id) {
+      await adminApi.updateBanner(editingBanner.id, banner);
+    } else {
+      await adminApi.createBanner(banner);
+    }
+    if (showToast) showToast('Đã lưu Banner thành công!', 'success');
     fetchAdminBanners();
   };
 
@@ -429,8 +413,8 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
     };
 
     if (catEditId) {
-      api
-        .put(`/categories/${catEditId}`, payload)
+      adminApi
+        .updateCategory(catEditId, payload)
         .then(() => {
           if (showToast) showToast('Cập nhật danh mục thành công!', 'success');
           setIsCatModalOpen(false);
@@ -441,8 +425,8 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
             showToast(err.response?.data?.message || 'Không thể cập nhật danh mục!', 'error');
         });
     } else {
-      api
-        .post('/categories', payload)
+      adminApi
+        .createCategory(payload)
         .then(() => {
           if (showToast) showToast('Tạo danh mục mới thành công!', 'success');
           setIsCatModalOpen(false);
@@ -458,8 +442,8 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
   const handleDeleteCategory = (id: number, name: string) => {
     if (!window.confirm(`Bạn có chắc muốn xóa danh mục "${name}" không?`)) return;
 
-    api
-      .delete(`/categories/${id}`)
+    adminApi
+      .deleteCategory(id)
       .then(() => {
         if (showToast) showToast(`Đã xóa danh mục "${name}"!`, 'success');
         fetchCategories();
@@ -533,6 +517,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
       stockQuantity: Number(addSizeStock) || 0,
       price: editingStockProduct.basePrice,
       color: editingStockProduct.color || 'Default',
+      sku: `${editingStockProduct.slug || editingStockProduct.id}-${finalSizeName}`.toUpperCase(),
     };
 
     setEditingStockProduct({
@@ -551,19 +536,11 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
   const handleSaveStock = async () => {
     if (!editingStockProduct) return;
     try {
-      const updatePayload = {
-        variants: editingStockProduct.variants.map((v: any) => ({
-          size: v.size,
-          stockQuantity: newStockValues[v.id || v.size] ?? v.stockQuantity,
-          color: v.color || editingStockProduct.color || 'Default',
-          price: v.price || editingStockProduct.basePrice,
-        })),
-      };
-
-      const res = await api.put(`/products/${editingStockProduct.id}/stock`, updatePayload);
-      if (res.data?.data) {
+      const updatePayload = buildStockProductRequest(editingStockProduct, newStockValues);
+      const updated = await adminApi.updateProduct(editingStockProduct.id, updatePayload);
+      if (updated) {
         setProducts((prev) =>
-          prev.map((p) => (p.id === editingStockProduct.id ? res.data.data : p))
+          prev.map((p) => (p.id === editingStockProduct.id ? updated : p))
         );
         setEditingStockProduct(null);
         if (showToast) showToast('Cập nhật tồn kho và Size thành công!', 'success');
@@ -586,11 +563,9 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
     formData.append('file', file);
 
     try {
-      const res = await api.post('/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      if (res.data?.data) {
-        setImageUrlState(res.data.data);
+      const imageUrl = await adminApi.uploadImage(formData);
+      if (imageUrl) {
+        setImageUrlState(imageUrl);
         if (showToast) showToast('Tải ảnh chính lên Cloudinary thành công!', 'success');
       }
     } catch (err: any) {
@@ -615,10 +590,8 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
       const formData = new FormData();
       formData.append('file', files[i]);
       try {
-        const res = await api.post('/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        if (res.data?.data) uploadedUrls.push(res.data.data);
+        const imageUrl = await adminApi.uploadImage(formData);
+        if (imageUrl) uploadedUrls.push(imageUrl);
       } catch (err) {
         console.log('One gallery upload failed');
       }
@@ -640,6 +613,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
     if (Number(newProdSizeS) > 0)
       initialVariants.push({
         size: 'S',
+        sku: `${newProdSku}-S`,
         stockQuantity: Number(newProdSizeS),
         price: Number(newProdPrice),
         color: newProdColor,
@@ -647,6 +621,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
     if (Number(newProdSizeM) > 0)
       initialVariants.push({
         size: 'M',
+        sku: `${newProdSku}-M`,
         stockQuantity: Number(newProdSizeM),
         price: Number(newProdPrice),
         color: newProdColor,
@@ -654,6 +629,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
     if (Number(newProdSizeL) > 0)
       initialVariants.push({
         size: 'L',
+        sku: `${newProdSku}-L`,
         stockQuantity: Number(newProdSizeL),
         price: Number(newProdPrice),
         color: newProdColor,
@@ -661,38 +637,41 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
     if (Number(newProdSizeXL) > 0)
       initialVariants.push({
         size: 'XL',
+        sku: `${newProdSku}-XL`,
         stockQuantity: Number(newProdSizeXL),
         price: Number(newProdPrice),
         color: newProdColor,
       });
 
-    if (initialVariants.length === 0) {
-      initialVariants.push({
-        size: 'M',
-        stockQuantity: 10,
-        price: Number(newProdPrice),
-        color: newProdColor,
-      });
+    const validationError = validateProductDraft({
+      name: newProdName,
+      skuPrefix: newProdSku,
+      basePrice: newProdPrice,
+      categoryId: newProdSubCatId,
+      thumbnailUrl: primaryImage,
+      variants: initialVariants,
+    });
+    if (validationError) {
+      if (showToast) showToast(validationError, 'error');
+      return;
     }
 
-    const payload = {
+    const payload = buildProductRequest({
       name: newProdName,
+      slug: generateSlug(newProdName),
       genderTarget: newProdGender,
-      subCategoryId: Number(newProdSubCatId),
+      categoryId: Number(newProdSubCatId),
       basePrice: Number(newProdPrice),
-      color: newProdColor,
-      sku: newProdSku,
       description: newProdDesc,
-      materialCare: newProdMaterial,
-      primaryImageUrl: primaryImage,
-      galleryImageUrls: galleryImages,
+      thumbnailUrl: primaryImage,
+      images: [primaryImage, ...galleryImages].filter(Boolean),
       variants: initialVariants,
-    };
+    });
 
     try {
-      const res = await api.post('/products', payload);
-      if (res.data?.data) {
-        setProducts((prev) => [res.data.data, ...prev]);
+      const created = await adminApi.createProduct(payload);
+      if (created) {
+        setProducts((prev) => [created, ...prev]);
         setIsAddProductModalOpen(false);
         if (showToast) showToast('Tạo sản phẩm mới & Lưu kho thành công!', 'success');
       }
@@ -706,14 +685,14 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
     setEditingAdminDetailProduct(prod);
     setDetailName(prod.name || '');
     setDetailGender(prod.genderTarget || 'MEN');
-    setDetailSubCatId(prod.subCategoryId || 1);
+    setDetailSubCatId(prod.categoryId || 1);
     setDetailPrice(prod.basePrice ? String(prod.basePrice) : '');
     setDetailColor(prod.color || '');
     setDetailSku(prod.sku || '');
     setDetailDesc(prod.description || '');
     setDetailMaterial(prod.materialCare || '');
     setDetailPrimaryImg(prod.thumbnailUrl || '');
-    setDetailGalleryImgs(prod.galleryImages || []);
+    setDetailGalleryImgs((prod.images || []).filter((url: string) => url !== prod.thumbnailUrl));
     setDetailVariants(
       prod.variants ? prod.variants.map((v: any) => ({ ...v })) : []
     );
@@ -722,25 +701,28 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
   const handleSaveAdminDetail = async () => {
     if (!editingAdminDetailProduct) return;
 
-    const payload = {
+    const payload = buildProductRequest({
       name: detailName,
+      slug: editingAdminDetailProduct.slug || generateSlug(detailName),
       genderTarget: detailGender,
-      subCategoryId: Number(detailSubCatId),
+      categoryId: Number(detailSubCatId),
       basePrice: Number(detailPrice),
-      color: detailColor,
-      sku: detailSku,
       description: detailDesc,
-      materialCare: detailMaterial,
-      primaryImageUrl: detailPrimaryImg,
-      galleryImageUrls: detailGalleryImgs,
-      variants: detailVariants,
-    };
+      thumbnailUrl: detailPrimaryImg,
+      images: [detailPrimaryImg, ...detailGalleryImgs].filter(Boolean),
+      variants: detailVariants.map((variant: any) => ({
+        ...variant,
+        color: variant.color || detailColor,
+        sku: variant.sku || `${detailSku || editingAdminDetailProduct.slug}-${variant.size}`.toUpperCase(),
+        price: variant.price ?? Number(detailPrice),
+      })),
+    });
 
     try {
-      const res = await api.put(`/products/${editingAdminDetailProduct.id}/detail`, payload);
-      if (res.data?.data) {
+      const updated = await adminApi.updateProduct(editingAdminDetailProduct.id, payload);
+      if (updated) {
         setProducts((prev) =>
-          prev.map((p) => (p.id === editingAdminDetailProduct.id ? res.data.data : p))
+          prev.map((p) => (p.id === editingAdminDetailProduct.id ? updated : p))
         );
         setEditingAdminDetailProduct(null);
         if (showToast) showToast('Đã lưu toàn bộ thuộc tính sản phẩm!', 'success');
@@ -751,34 +733,17 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
   };
 
   const chartData = useMemo(() => {
-    if (chartPeriod === 'quarterly') {
-      return [
-        { label: 'Q1 (T1-T3)', revenue: 45000000, orderCount: 28 },
-        { label: 'Q2 (T4-T6)', revenue: 68000000, orderCount: 42 },
-        { label: 'Q3 (T7-T9)', revenue: 85000000, orderCount: 56 },
-        {
-          label: 'Q4 (T10-T12)',
-          revenue: adminOrders.reduce((s, o) => s + (o.totalAmount || 0), 0),
-          orderCount: adminOrders.length,
-        },
-      ];
-    }
+    if (!monthlySales || monthlySales.length === 0) return [];
 
-    if (!monthlySales || monthlySales.length === 0) {
-      return [
-        { label: 'Tháng 1', revenue: 12000000, orderCount: 8 },
-        { label: 'Tháng 2', revenue: 19000000, orderCount: 14 },
-        { label: 'Tháng 3', revenue: 15000000, orderCount: 11 },
-        { label: 'Tháng 4', revenue: 24000000, orderCount: 18 },
-        { label: 'Tháng 5', revenue: 31000000, orderCount: 22 },
-        { label: 'Tháng 6', revenue: 28000000, orderCount: 19 },
-        { label: 'Tháng 7', revenue: 42000000, orderCount: 29 },
-        {
-          label: 'Tháng 8 (Hiện tại)',
-          revenue: adminOrders.reduce((s, o) => s + (o.totalAmount || 0), 0),
-          orderCount: adminOrders.length,
-        },
-      ];
+    if (chartPeriod === 'quarterly') {
+      return [1, 2, 3, 4].map((quarter) => {
+        const months = monthlySales.filter((item) => Math.ceil(Number(item.month) / 3) === quarter);
+        return {
+          label: `Q${quarter}`,
+          revenue: months.reduce((sum, item) => sum + (Number(item.revenue) || 0), 0),
+          orderCount: months.reduce((sum, item) => sum + (Number(item.orderCount) || 0), 0),
+        };
+      });
     }
 
     return monthlySales.map((item) => ({
@@ -786,7 +751,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
       revenue: Number(item.revenue) || 0,
       orderCount: Number(item.orderCount) || 0,
     }));
-  }, [monthlySales, chartPeriod, adminOrders]);
+  }, [monthlySales, chartPeriod]);
 
   const maxRevenue = Math.max(...chartData.map((d) => d.revenue), 10000000);
   const numPoints = chartData.length;
@@ -921,7 +886,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
               setNewProdSizeL={setNewProdSizeL}
               newProdSizeXL={newProdSizeXL}
               setNewProdSizeXL={setNewProdSizeXL}
-              CATEGORY_MAP={CATEGORY_MAP}
+              categoryTree={categoryTree}
               editingStockProduct={editingStockProduct}
               setEditingStockProduct={setEditingStockProduct}
               newStockValues={newStockValues}
@@ -1157,9 +1122,8 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
         <AdminBannerModal
           isOpen={isBannerModalOpen}
           onClose={() => setIsBannerModalOpen(false)}
-          editingBanner={editingBanner}
-          onSuccess={handleSaveBannerSuccess}
-          showToast={showToast}
+          bannerToEdit={editingBanner}
+          onSave={handleSaveBanner}
         />
       )}
 
