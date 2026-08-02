@@ -1,54 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { formatVND } from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
-
-const FALLBACK_PRODUCTS = [
-  {
-    id: 101,
-    category: 'Áo Măng Tô & Vest Nữ',
-    name: 'Áo Măng Tô Dạ Sculptural Wool Overcoat',
-    price: 4500000,
-    gender: 'Women',
-    image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 102,
-    category: 'Bộ Suit & Vest Nam',
-    name: 'Bộ Vest Nam Slim-fit Wool Suit',
-    price: 3850000,
-    gender: 'Men',
-    image: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 103,
-    category: 'Váy & Đầm Nữ',
-    name: 'Đầm Lụa Dạ Hội Silk Evening Gown',
-    price: 4200000,
-    gender: 'Women',
-    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 104,
-    category: 'Áo Sơ Mi Nam',
-    name: 'Áo Sơ Mi Oxford Nam Classic',
-    price: 850000,
-    gender: 'Men',
-    image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 105,
-    category: 'Túi Xách Da',
-    name: 'Túi Xách Da Cao Cấp Structured Leather Bag',
-    price: 3200000,
-    gender: 'Accessories',
-    image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80'
-  }
-];
+import { catalogFailureState, normalizeCatalogProducts } from '../utils/catalog-state';
 
 export default function CollectionsPage({ onQuickView, activeCategoryFilter = '', searchKeyword = '', initialSubCategoryId = null }) {
-  const [products, setProducts] = useState(FALLBACK_PRODUCTS);
+  const [products, setProducts] = useState([]);
   const [categoriesList, setCategoriesList] = useState([]);
   const [selectedGender, setSelectedGender] = useState(activeCategoryFilter || '');
   const [selectedSubCategory, setSelectedSubCategory] = useState(initialSubCategoryId || '');
@@ -59,6 +17,7 @@ export default function CollectionsPage({ onQuickView, activeCategoryFilter = ''
   const [sortDir, setSortDir] = useState('desc');
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -69,7 +28,7 @@ export default function CollectionsPage({ onQuickView, activeCategoryFilter = ''
           setCategoriesList(res.data.data);
         }
       })
-      .catch(err => console.log("Using static categories filter"));
+      .catch(() => setCategoriesList([]));
   }, []);
 
   useEffect(() => {
@@ -86,13 +45,9 @@ export default function CollectionsPage({ onQuickView, activeCategoryFilter = ''
     }
   }, [initialSubCategoryId]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-    fetchFilteredProducts();
-  }, [selectedGender, selectedSubCategory, selectedSize, maxPrice, keyword, sortBy, sortDir]);
-
-  const fetchFilteredProducts = () => {
+  const fetchFilteredProducts = useCallback(() => {
     setLoading(true);
+    setLoadError(false);
     let url = `/products?page=0&size=50&sortBy=${sortBy}&sortDir=${sortDir}`;
     
     if (keyword.trim()) {
@@ -114,25 +69,20 @@ export default function CollectionsPage({ onQuickView, activeCategoryFilter = ''
     api.get(url)
       .then(res => {
         setLoading(false);
-        if (res.data?.data?.content && res.data.data.content.length > 0) {
-          const apiProducts = res.data.data.content.map(p => ({
-            id: p.id,
-            category: p.categoryName || 'DuoStyle Collection',
-            name: p.name,
-            price: p.basePrice,
-            gender: p.genderTarget === 'MEN' ? 'Men' : p.genderTarget === 'WOMEN' ? 'Women' : 'Accessories',
-            image: p.thumbnailUrl || FALLBACK_PRODUCTS[0].image
-          }));
-          setProducts(apiProducts);
-        } else {
-          setProducts([]);
-        }
+        setProducts(normalizeCatalogProducts(res.data?.data));
       })
-      .catch(err => {
+      .catch(() => {
         setLoading(false);
-        console.log("Using fallback local collections data");
+        const failure = catalogFailureState();
+        setProducts(failure.products);
+        setLoadError(failure.error);
       });
-  };
+  }, [sortBy, sortDir, keyword, selectedSubCategory, selectedGender, maxPrice, selectedSize]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchFilteredProducts();
+  }, [fetchFilteredProducts]);
 
   const filteredSubCategories = categoriesList.filter(c => {
     if (!c.parentId) return false; // Filter only subcategories
@@ -368,6 +318,18 @@ export default function CollectionsPage({ onQuickView, activeCategoryFilter = ''
           {loading ? (
             <div className="flex justify-center items-center py-24">
               <LoadingSpinner text="Đang tải dữ liệu sản phẩm..." />
+            </div>
+          ) : loadError ? (
+            <div className="text-center py-20 border border-error/30 bg-error/5 rounded-lg">
+              <span className="material-symbols-outlined text-4xl text-error mb-2">cloud_off</span>
+              <h3 className="font-headline-sm text-headline-sm mb-2">Không thể tải danh sách sản phẩm</h3>
+              <p className="font-body-md text-on-surface-variant mb-6">Vui lòng kiểm tra kết nối và thử lại.</p>
+              <button
+                onClick={fetchFilteredProducts}
+                className="bg-primary text-white font-label-caps text-label-caps px-6 py-3 transition-colors cursor-pointer rounded"
+              >
+                Thử Lại
+              </button>
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-20 border border-outline-variant bg-surface-container rounded-lg">

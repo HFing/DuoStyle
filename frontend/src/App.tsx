@@ -172,7 +172,7 @@ export default function App() {
           handleNavigate('not-found');
         }
       });
-  }, [loadHomeProducts, reloadCart]);
+  }, [loadHomeProducts, reloadCart, currentPage]);
 
   const handleNavigate = (
     page,

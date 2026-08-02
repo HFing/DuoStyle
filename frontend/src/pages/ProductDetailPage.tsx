@@ -103,7 +103,7 @@ export default function ProductDetailPage({ productId, onAddToCart, onBuyNow, on
       });
 
     return () => { active = false; };
-  }, [productId, retryToken]);
+  }, [productId, retryToken, fetchReviews]);
 
   const requestedProduct = product && String(product.id) === String(productId) ? product : null;
   const detailState = getProductDetailState({ loading, error: loadError, product: requestedProduct });

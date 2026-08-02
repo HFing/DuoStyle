@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../api/axios';
 import OrderDetailModal from '../components/OrderDetailModal';
 import AdminAiSettings from '../components/AdminAiSettings';
@@ -219,7 +219,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
       .catch((err) => console.log('Admin banners load error'));
   };
 
-  const fetchAdminReviews = () => {
+  const fetchAdminReviews = useCallback(() => {
     adminApi
       .getReviews({
         page: reviewsPage - 1,
@@ -232,13 +232,13 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
         setTotalReviewsPages(page.totalPages);
       })
       .catch((err) => console.log('Admin reviews load error'));
-  };
+  }, [reviewsPage, adminReviewSearch, adminReviewRatingFilter]);
 
   useEffect(() => {
     if (activeTab === 'reviews') {
       fetchAdminReviews();
     }
-  }, [activeTab, reviewsPage, adminReviewSearch, adminReviewRatingFilter]);
+  }, [activeTab, fetchAdminReviews]);
 
   const handleToggleReviewActive = async (review: any) => {
     try {

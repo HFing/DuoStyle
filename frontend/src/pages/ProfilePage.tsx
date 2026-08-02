@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
+import { buildStockProductRequest, createAdminApi } from '../utils/admin-api';
 import { formatVND } from '../components/ProductCard';
 import { resolveProfileTabIntent } from '../utils/checkout';
 import OrderDetailModal from '../components/OrderDetailModal';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import Pagination from '../components/Pagination';
+import { resolveProductImage } from '../utils/product-image';
+
+const adminApi = createAdminApi(api);
 
 export default function ProfilePage({ user, initialTab, autoOpenOrderCode, onNavigate, onLogout, showToast, onUpdateUser }) {
   const [activeTab, setActiveTab] = useState(() => (autoOpenOrderCode ? 'orders' : resolveProfileTabIntent({ profileTab: initialTab })));
@@ -87,7 +91,7 @@ export default function ProfilePage({ user, initialTab, autoOpenOrderCode, onNav
             name: p.name,
             category: p.categoryName || 'Thời Trang',
             price: p.basePrice,
-            image: p.thumbnailUrl || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80'
+            image: resolveProductImage(p.thumbnailUrl)
           }));
           setWishlist(apiWishlist);
         }
@@ -98,7 +102,7 @@ export default function ProfilePage({ user, initialTab, autoOpenOrderCode, onNav
     if (isAdmin) {
       fetchInventory();
     }
-  }, [user]);
+  }, [user, isAdmin]);
 
   // Auto poll order updates every 5s when active tab is orders or profile
   useEffect(() => {
@@ -148,29 +152,20 @@ export default function ProfilePage({ user, initialTab, autoOpenOrderCode, onNav
     setNewStockValues(initialStocks);
   };
 
-  const handleSaveStock = () => {
+  const handleSaveStock = async () => {
     if (!editingStockProduct) return;
 
-    // Send stock updates to backend for each variant
-    const variantUpdates = Object.entries(newStockValues).map(([key, val]) => {
-      return api.put(`/products/variants/${key}/stock`, { stockQuantity: Number(val) })
-        .catch(err => console.log(`Failed to update variant ${key}`));
-    });
-    Promise.all(variantUpdates).then(() => {
-      // Update local state
-      setInventoryProducts(prev => prev.map(p => {
-        if (p.id === editingStockProduct.id) {
-          const updatedVariants = p.variants.map(v => ({
-            ...v,
-            stockQuantity: Number(newStockValues[v.id || v.size] ?? v.stockQuantity)
-          }));
-          return { ...p, variants: updatedVariants };
-        }
-        return p;
-      }));
+    try {
+      const payload = buildStockProductRequest(editingStockProduct, newStockValues);
+      const updated = await adminApi.updateProduct(editingStockProduct.id, payload);
+      setInventoryProducts(prev => prev.map(p =>
+        p.id === editingStockProduct.id ? updated : p
+      ));
       if (showToast) showToast(`Đã cập nhật tồn kho "${editingStockProduct.name}" thành công!`, 'success');
       setEditingStockProduct(null);
-    });
+    } catch (err) {
+      if (showToast) showToast('Không thể cập nhật tồn kho sản phẩm!', 'error');
+    }
   };
 
   const handleSaveProfile = async () => {
