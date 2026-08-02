@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: duostyle-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: duostyle_db
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: duostyle_user
+      MYSQL_PASSWORD: duostyle_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - duostyle_mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+volumes:
+  duostyle_mysql_data:

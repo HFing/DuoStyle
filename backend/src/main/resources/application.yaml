@@ -1,0 +1,77 @@
+server:
+  port: 8080
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        name: JSESSIONID
+        http-only: true
+        secure: false
+
+spring:
+  ai:
+    model:
+      chat: openai
+    openai:
+      api-key: ${GROQ_API_KEY:not-configured}
+      base-url: https://api.groq.com/openai
+      chat:
+        options:
+          model: ${GROQ_MODEL:openai/gpt-oss-20b}
+          temperature: 0.2
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:backend/.env[.properties]
+  application:
+    name: DuoStyle
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:not-configured}
+            client-secret: ${GOOGLE_CLIENT_SECRET:not-configured}
+            redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/login/oauth2/code/google}
+            authorization-grant-type: authorization_code
+            scope: openid,profile,email
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/duostyle_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:duostyle_user}
+    password: ${DB_PASSWORD:duostyle_pass}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+  mail:
+    host: ${MAIL_HOST:sandbox.smtp.mailtrap.io}
+    port: ${MAIL_PORT:2525}
+    username: ${MAIL_USERNAME:demo_mailtrap_user}
+    password: ${MAIL_PASSWORD:demo_mailtrap_pass}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+vnpay:
+  tmn-code: ${VNP_TMN_CODE}
+  hash-secret: ${VNP_HASH_SECRET}
+  pay-url: ${VNP_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+  return-url: ${VNP_RETURN_URL:http://localhost:8080/api/v1/payments/vnpay-return}
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  seed:
+    reset: ${APP_SEED_RESET:false}
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:demo_cloud}
+  api-key: ${CLOUDINARY_API_KEY:demo_key}
+  api-secret: ${CLOUDINARY_API_SECRET:demo_secret}
