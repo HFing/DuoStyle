@@ -755,12 +755,20 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
     }));
   }, [monthlySales, chartPeriod]);
 
-  const maxRevenue = Math.max(...chartData.map((d) => d.revenue), 10000000);
+  const maxRevenue = useMemo(() => {
+    const actualMax = Math.max(...chartData.map((d) => d.revenue), 0);
+    if (actualMax === 0) return 1000000;
+    const padded = actualMax * 1.25;
+    const mag = Math.pow(10, Math.floor(Math.log10(padded)));
+    const step = mag >= 1000 ? mag / 2 : 100;
+    return Math.ceil(padded / step) * step;
+  }, [chartData]);
+
   const numPoints = chartData.length;
 
   const pointsCoords = chartData.map((d, i) => {
-    const x = numPoints > 1 ? (i / (numPoints - 1)) * 920 + 40 : 500;
-    const y = 250 - (d.revenue / maxRevenue) * 200;
+    const x = numPoints > 1 ? (i / (numPoints - 1)) * 840 + 100 : 500;
+    const y = 235 - (d.revenue / maxRevenue) * 195;
     return { ...d, x, y };
   });
 
@@ -810,6 +818,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
               pointsCoords={pointsCoords}
               hoveredPoint={hoveredPoint}
               setHoveredPoint={setHoveredPoint}
+              maxRevenue={maxRevenue}
             />
           )}
 
