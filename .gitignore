@@ -38,3 +38,4 @@ yarn-debug.log*
 .playwright-cli/
 .playwright-sessions/
 .superpowers/
+docs/
