@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import api from '../api/axios';
 
 interface Banner {
   id: number;
@@ -40,18 +41,16 @@ export default function Hero({ onShopNow }: { onShopNow?: () => void }) {
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    fetch('/api/v1/banners')
+    api
+      .get('/banners')
       .then((res) => {
-        if (res.ok) return res.json();
-        throw new Error('Failed to fetch banners');
-      })
-      .then((data: Banner[]) => {
-        if (data && data.length > 0) {
+        const data = res.data;
+        if (Array.isArray(data) && data.length > 0) {
           setBanners(data);
         }
       })
-      .catch(() => {
-        // Fallback to DEFAULT_BANNERS if API is unavailable or returning empty
+      .catch((err) => {
+        console.error('Error fetching home banners:', err);
       });
   }, []);
 
@@ -92,7 +91,7 @@ export default function Hero({ onShopNow }: { onShopNow?: () => void }) {
 
   return (
     <section 
-      className="relative w-full h-[65vh] md:h-[85vh] lg:h-screen overflow-hidden group bg-black cursor-pointer"
+      className="relative w-full h-[52vh] sm:h-[68vh] md:h-[80vh] lg:h-[86vh] max-h-[820px] overflow-hidden group bg-neutral-950 cursor-pointer select-none border-b border-outline-variant/30 shadow-2xl"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleBannerClick}
@@ -107,57 +106,65 @@ export default function Hero({ onShopNow }: { onShopNow?: () => void }) {
               isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
             }`}
           >
-            <div
-              className={`w-full h-full bg-cover bg-center transition-transform duration-[4500ms] ${
-                isActive ? 'scale-105' : 'scale-100'
+            <img
+              src={banner.imageUrl}
+              alt={banner.title || 'DuoStyle Hero Banner'}
+              className={`w-full h-full object-cover object-top transition-transform duration-[5000ms] ${
+                isActive ? 'scale-[1.03]' : 'scale-100'
               }`}
-              style={{ backgroundImage: `url('${banner.imageUrl}')` }}
             />
-            {/* Gradient Overlay for Sleek Look */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
+            {/* Elegant Double Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent pointer-events-none" />
           </div>
         );
       })}
 
-      {/* Prev / Next Arrows */}
+      {/* Prev / Next Glassmorphism Arrows */}
       {banners.length > 1 && (
         <>
           <button
             onClick={handlePrev}
             aria-label="Previous Slide"
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/40 text-white flex items-center justify-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-black/80 hover:scale-110 shadow-lg"
+            className="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center backdrop-blur-md border border-white/20 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white/30 hover:scale-110 active:scale-95 shadow-2xl cursor-pointer"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
           </button>
 
           <button
             onClick={handleNext}
             aria-label="Next Slide"
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-black/40 text-white flex items-center justify-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-black/80 hover:scale-110 shadow-lg"
+            className="absolute right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center backdrop-blur-md border border-white/20 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white/30 hover:scale-110 active:scale-95 shadow-2xl cursor-pointer"
           >
-            <ChevronRight className="w-6 h-6" />
+            <ChevronRight className="w-6 h-6 stroke-[2.5]" />
           </button>
         </>
       )}
 
-      {/* Bottom Indicators */}
+      {/* Glassmorphism Bottom Progress & Counter Bar */}
       {banners.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3">
-          {banners.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentIndex(idx);
-              }}
-              aria-label={`Go to slide ${idx + 1}`}
-              className={`h-2.5 rounded-full transition-all duration-500 cursor-pointer ${
-                idx === currentIndex
-                  ? 'w-10 bg-white shadow-md'
-                  : 'w-2.5 bg-white/50 hover:bg-white/80'
-              }`}
-            />
-          ))}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 px-5 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/20 flex items-center gap-4 shadow-2xl">
+          <span className="text-[11px] font-mono font-bold text-white/90 tracking-widest select-none">
+            {String(currentIndex + 1).padStart(2, '0')} / {String(banners.length).padStart(2, '0')}
+          </span>
+          <div className="w-[1px] h-3 bg-white/30" />
+          <div className="flex items-center gap-2">
+            {banners.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentIndex(idx);
+                }}
+                aria-label={`Go to slide ${idx + 1}`}
+                className={`h-1.5 rounded-full transition-all duration-500 cursor-pointer ${
+                  idx === currentIndex
+                    ? 'w-8 bg-white shadow-sm'
+                    : 'w-2 bg-white/40 hover:bg-white/70'
+                }`}
+              />
+            ))}
+          </div>
         </div>
       )}
     </section>

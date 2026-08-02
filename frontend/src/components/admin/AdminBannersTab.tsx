@@ -16,7 +16,9 @@ export default function AdminBannersTab({
   handleToggleBannerActive,
   handleDeleteBanner,
 }: AdminBannersTabProps) {
-  const safeBanners = Array.isArray(adminBanners) ? adminBanners : [];
+  const safeBanners = (Array.isArray(adminBanners) ? adminBanners : [])
+    .slice()
+    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
 
   return (
     <div className="space-y-6">
@@ -76,11 +78,11 @@ export default function AdminBannersTab({
                   </td>
                   <td className="p-4">
                     <span className="px-2.5 py-1 bg-surface-container rounded text-[11px] font-bold border border-outline-variant">
-                      {b.buttonText || 'Khám Phá Ngay'} → {b.buttonLink || '#'}
+                      {b.linkUrl || '#products'}
                     </span>
                   </td>
                   <td className="p-4 text-center font-bold text-primary font-mono text-sm">
-                    #{b.sortOrder ?? 0}
+                    #{b.displayOrder ?? 1}
                   </td>
                   <td className="p-4 text-center">
                     <span

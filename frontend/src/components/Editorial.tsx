@@ -12,16 +12,20 @@ export default function Editorial({ onExploreClick }) {
           </div>
         </div>
         <div className="md:col-span-5 md:pl-12">
-          <p className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest mb-6">Our Philosophy</p>
-          <h2 className="font-headline-md text-headline-md text-primary mb-8 leading-tight">
-            Crafting spaces between the material and the soul.
+          <p className="font-label-caps text-label-caps text-secondary font-bold uppercase tracking-widest mb-4">Triết Lý Của Chúng Tôi</p>
+          <h2 className="font-headline-md text-headline-md text-primary mb-6 leading-tight">
+            Khai mở không gian giao thoa giữa chất liệu và tâm hồn.
           </h2>
-          <p className="font-body-lg text-body-lg text-on-surface-variant mb-12 leading-relaxed">
-            DuoStyle was founded on the principle of reductive luxury. We believe that true elegance is found not in excess, but in the precision of form, the quality of fiber, and the resonance of silence. Each piece is a testament to the artisan's hand and the visionary's eye.
+          <p className="font-body-lg text-body-lg text-on-surface-variant mb-8 leading-relaxed">
+            DuoStyle được sáng lập dựa trên triết lý <span className="font-semibold text-primary">"sang trọng tinh giản" (reductive luxury)</span>. Chúng tôi tin rằng sự thanh lịch đích thực không nằm ở sự phô trương hay dư thừa, mà hiện hữu trong sự tỉ mỉ của phom dáng, chất lượng hảo hạng của từng sợi vải và sự đồng điệu đầy tĩnh lặng. Mỗi thiết kế là một minh chứng cho bàn tay tài hoa của người thợ thủ công và góc nhìn tầm vóc của nhà thiết kế.
           </p>
-          <a className="font-label-caps text-label-caps uppercase tracking-widest border-b border-primary text-primary pb-2 hover:pb-3 transition-all" href="#">
-            Read the Story
-          </a>
+          <button 
+            type="button"
+            onClick={onExploreClick}
+            className="font-label-caps text-label-caps uppercase tracking-widest border-b border-primary text-primary pb-2 hover:pb-3 transition-all cursor-pointer font-bold inline-flex items-center gap-2"
+          >
+            Khám Phá Câu Chuyện →
+          </button>
         </div>
       </div>
     </section>

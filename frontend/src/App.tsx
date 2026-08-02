@@ -19,6 +19,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ToastNotification from './components/ToastNotification';
 import AiChatBox from './components/AiChatBox';
+import InfoModal, { InfoModalTab } from './components/InfoModal';
 import { loadHomeSections, mapCartItems } from './utils/home-products';
 import { requireCartVariant, runAuthoritativeCartMutation } from './utils/cart-mutations';
 import { resolveSelectedProductId } from './utils/product-detail';
@@ -70,6 +71,7 @@ export default function App() {
   const [paymentResult, setPaymentResult] = useState(null);
   const [profileTabIntent, setProfileTabIntent] = useState(initialNavigation.profileTab || 'profile');
   const [autoOpenOrderCode] = useState(initialNavigation.autoOpenOrderCode || null);
+  const [infoModalTab, setInfoModalTab] = useState<InfoModalTab | null>(null);
   const [toast, setToast] = useState({
     show: Boolean(initialNavigation.recoveryMessage || initialNavigation.toastMessage),
     message: initialNavigation.recoveryMessage || initialNavigation.toastMessage || '',
@@ -487,7 +489,7 @@ export default function App() {
             onQuickShop={handleQuickShop}
           />
 
-          <Editorial />
+          <Editorial onExploreClick={() => setInfoModalTab('story')} />
           <Newsletter />
         </main>
       )}
@@ -570,7 +572,14 @@ export default function App() {
         <NotFoundPage onNavigate={handleNavigate} />
       )}
 
-      {!isFullAdminView && <Footer />}
+      {!isFullAdminView && <Footer onOpenInfoModal={(tab) => setInfoModalTab(tab)} />}
+
+      <InfoModal
+        isOpen={Boolean(infoModalTab)}
+        activeTab={infoModalTab}
+        onClose={() => setInfoModalTab(null)}
+        showToast={showToast}
+      />
     </div>
   );
 }
