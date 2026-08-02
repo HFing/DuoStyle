@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
 import api from '../api/axios';
-import { createAdminApi } from '../utils/admin-api';
+import { createAdminApi } from '../services/adminService';
 
 const adminApi = createAdminApi(api);
 

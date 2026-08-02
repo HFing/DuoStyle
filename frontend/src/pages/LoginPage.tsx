@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import api from '../api/axios';
 import ToastNotification from '../components/ToastNotification';
-import { getGoogleAuthorizationUrl } from '../utils/google-auth';
+import { getGoogleAuthorizationUrl } from '../services/authService';
 
 export default function LoginPage({ onNavigate, onLoginSuccess, initialMessage, showToast }) {
   const [email, setEmail] = useState('');
@@ -192,10 +192,10 @@ export default function LoginPage({ onNavigate, onLoginSuccess, initialMessage, 
 
           {/* Footer Links */}
           <div className="pt-12 flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-2 opacity-50">
-            <a className="font-label-caps text-[10px] uppercase tracking-widest hover:opacity-100 transition-opacity" href="#">Phát Triển Bền Vững</a>
-            <a className="font-label-caps text-[10px] uppercase tracking-widest hover:opacity-100 transition-opacity" href="#">Bảo Mật</a>
-            <a className="font-label-caps text-[10px] uppercase tracking-widest hover:opacity-100 transition-opacity" href="#">Điều Khoản</a>
-            <a className="font-label-caps text-[10px] uppercase tracking-widest hover:opacity-100 transition-opacity" href="#">Liên Hệ</a>
+            <a className="font-label-caps text-[10px] uppercase tracking-widest hover:opacity-100 transition-opacity" href="#" onClick={(e) => e.preventDefault()}>Phát Triển Bền Vững</a>
+            <a className="font-label-caps text-[10px] uppercase tracking-widest hover:opacity-100 transition-opacity" href="#" onClick={(e) => e.preventDefault()}>Bảo Mật</a>
+            <a className="font-label-caps text-[10px] uppercase tracking-widest hover:opacity-100 transition-opacity" href="#" onClick={(e) => e.preventDefault()}>Điều Khoản</a>
+            <a className="font-label-caps text-[10px] uppercase tracking-widest hover:opacity-100 transition-opacity" href="#" onClick={(e) => e.preventDefault()}>Liên Hệ</a>
           </div>
         </div>
       </div>

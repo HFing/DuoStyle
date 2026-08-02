@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
-import { buildStockProductRequest, createAdminApi } from '../utils/admin-api';
+import { buildStockProductRequest, createAdminApi } from '../services/adminService';
 import { formatVND } from '../components/ProductCard';
-import { resolveProfileTabIntent } from '../utils/checkout';
+import { resolveProfileTabIntent } from '../services/checkoutService';
 import OrderDetailModal from '../components/OrderDetailModal';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import Pagination from '../components/Pagination';
 import { resolveProductImage } from '../utils/product-image';
+import { fetchWishlistApi, removeFromWishlistApi } from '../services/wishlistService';
 
 const adminApi = createAdminApi(api);
 
@@ -82,21 +83,10 @@ export default function ProfilePage({ user, initialTab, autoOpenOrderCode, onNav
     // Fetch order history initially
     fetchMyOrders();
 
-    // Fetch wishlist
-    api.get('/wishlist')
-      .then(res => {
-        if (res.data?.data && res.data.data.length > 0) {
-          const apiWishlist = res.data.data.map(p => ({
-            id: p.id,
-            name: p.name,
-            category: p.categoryName || 'Thời Trang',
-            price: p.basePrice,
-            image: resolveProductImage(p.thumbnailUrl)
-          }));
-          setWishlist(apiWishlist);
-        }
-      })
-      .catch(() => console.log("No wishlist items found"));
+    // Fetch wishlist from Backend REST API
+    if (user) {
+      fetchWishlistApi().then(items => setWishlist(items));
+    }
 
     // Fetch Inventory data from backend (admin only)
     if (isAdmin) {
@@ -104,14 +94,17 @@ export default function ProfilePage({ user, initialTab, autoOpenOrderCode, onNav
     }
   }, [user, isAdmin]);
 
-  // Auto poll order updates every 5s when active tab is orders or profile
+  // Auto poll order updates & refresh wishlist on tab switch
   useEffect(() => {
     fetchMyOrders();
+    if (activeTab === 'wishlist' && user) {
+      fetchWishlistApi().then(items => setWishlist(items));
+    }
     const interval = setInterval(() => {
       fetchMyOrders();
     }, 5000);
     return () => clearInterval(interval);
-  }, [activeTab]);
+  }, [activeTab, user]);
 
   const fetchInventory = () => {
     api.get('/products?size=50')
@@ -123,9 +116,15 @@ export default function ProfilePage({ user, initialTab, autoOpenOrderCode, onNav
       .catch(() => console.log("Inventory load error"));
   };
 
-  const removeFromWishlist = (id) => {
-    setWishlist(wishlist.filter(item => item.id !== id));
-    api.delete(`/wishlist/${id}`).catch(() => console.log("Removed from local wishlist"));
+  const removeFromWishlist = async (id: number) => {
+    setWishlist(prev => prev.filter(item => item.id !== id));
+    const ok = await removeFromWishlistApi(id);
+    if (ok) {
+      if (showToast) showToast('Đã xóa sản phẩm khỏi Danh sách yêu thích.', 'success');
+    } else {
+      if (showToast) showToast('Không thể xóa sản phẩm khỏi danh sách yêu thích.', 'error');
+      fetchWishlistApi().then(items => setWishlist(items));
+    }
   };
 
   const handleSignOut = async () => {

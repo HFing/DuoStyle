@@ -6,7 +6,7 @@ import {
   loadHomeSections,
   mapCartItems,
   mapHomeProduct,
-} from './utils/home-products.ts';
+} from '../services/productService.ts';
 
 test('mapHomeProduct maps a database product without a sample fallback', () => {
   assert.deepEqual(mapHomeProduct({

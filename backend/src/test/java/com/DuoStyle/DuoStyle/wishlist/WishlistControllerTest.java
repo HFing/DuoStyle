@@ -12,8 +12,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,14 +30,11 @@ class WishlistControllerTest {
     @InjectMocks
     private WishlistController wishlistController;
 
-    private UserDetails userDetails;
+    private Authentication authentication;
 
     @BeforeEach
     void setUp() {
-        userDetails = User.withUsername("test@example.com")
-                .password("password")
-                .authorities(Collections.emptyList())
-                .build();
+        authentication = new UsernamePasswordAuthenticationToken("test@example.com", "password", Collections.emptyList());
     }
 
     @Test
@@ -46,7 +43,7 @@ class WishlistControllerTest {
         ProductResponse product = ProductResponse.builder().id(10L).name("Áo Thun").build();
         when(wishlistService.getUserWishlist("test@example.com")).thenReturn(List.of(product));
 
-        ResponseEntity<ApiResponse<List<ProductResponse>>> response = wishlistController.getUserWishlist(userDetails);
+        ResponseEntity<ApiResponse<List<ProductResponse>>> response = wishlistController.getUserWishlist(authentication);
 
         assertNotNull(response.getBody());
         assertEquals(1, response.getBody().getData().size());
@@ -58,7 +55,7 @@ class WishlistControllerTest {
     void testAddToWishlist_Success() {
         doNothing().when(wishlistService).addToWishlist("test@example.com", 10L);
 
-        ResponseEntity<ApiResponse<Void>> response = wishlistController.addToWishlist(10L, userDetails);
+        ResponseEntity<ApiResponse<Void>> response = wishlistController.addToWishlist(10L, authentication);
 
         assertNotNull(response.getBody());
         assertEquals("Product added to wishlist", response.getBody().getMessage());
@@ -70,7 +67,7 @@ class WishlistControllerTest {
     void testRemoveFromWishlist_Success() {
         doNothing().when(wishlistService).removeFromWishlist("test@example.com", 10L);
 
-        ResponseEntity<ApiResponse<Void>> response = wishlistController.removeFromWishlist(10L, userDetails);
+        ResponseEntity<ApiResponse<Void>> response = wishlistController.removeFromWishlist(10L, authentication);
 
         assertNotNull(response.getBody());
         assertEquals("Product removed from wishlist", response.getBody().getMessage());

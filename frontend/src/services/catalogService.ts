@@ -1,4 +1,4 @@
-import { resolveProductImage } from './product-image.ts';
+import { resolveProductImage } from '../utils/product-image.ts';
 
 export function normalizeCatalogProducts(data: any): any[] {
   const content = data && Array.isArray(data.content) ? data.content : [];

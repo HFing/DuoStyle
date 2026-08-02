@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { getGoogleAuthorizationUrl, readGoogleLoginResult } from './utils/google-auth.ts';
+import { getGoogleAuthorizationUrl, readGoogleLoginResult } from '../services/authService.ts';
 
 test('Google login starts at the Spring Security authorization endpoint', () => {
   assert.equal(

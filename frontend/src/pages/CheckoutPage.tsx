@@ -10,7 +10,7 @@ import {
   voucherPreviewApplied,
   voucherPreviewFailure,
   voucherPreviewRemoved,
-} from '../utils/checkout';
+} from '../services/checkoutService';
 import { formatVND } from '../components/ProductCard';
 
 export default function CheckoutPage({
@@ -180,7 +180,7 @@ export default function CheckoutPage({
                   id="checkout-address"
                   required
                   autoComplete="street-address"
-                  rows="3"
+                  rows={3}
                   value={address}
                   onChange={(event) => setAddress(event.target.value)}
                   className="w-full bg-white border border-outline-variant rounded px-4 py-3 font-body-md focus:border-primary focus:ring-primary resize-y"

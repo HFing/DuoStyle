@@ -1,6 +1,6 @@
 import React from 'react';
 import ProductCard from './ProductCard';
-import { getHomeSectionState } from '../utils/home-products';
+import { getHomeSectionState } from '../services/productService';
 
 const NEUTRAL_PRODUCT_PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000"%3E%3Crect width="800" height="1000" fill="%23e7e5e4"/%3E%3Cpath d="M300 430h200v140H300z" fill="none" stroke="%2378716c" stroke-width="12"/%3E%3Ccircle cx="360" cy="475" r="22" fill="%2378716c"/%3E%3Cpath d="m320 545 58-58 42 42 32-32 48 48" fill="none" stroke="%2378716c" stroke-width="12"/%3E%3C/svg%3E';
 
@@ -13,9 +13,13 @@ export default function ProductSection({
   products = [],
   loading = false,
   error = false,
+  user,
+  userWishlistIds = [],
+  onNavigate,
+  showToast,
   onRetry,
   onQuickShop,
-}) {
+}: any) {
   const state = getHomeSectionState({ loading, error, products });
 
   return (
@@ -33,14 +37,14 @@ export default function ProductSection({
             )}
           </div>
           {linkText && (
-            <a 
-              className={`font-label-caps text-label-caps uppercase tracking-widest border-b pb-1 ${
+            <button 
+              className={`font-label-caps text-label-caps uppercase tracking-widest border-b pb-1 cursor-pointer bg-transparent border-none ${
                 isDark ? 'border-on-primary text-on-primary' : 'border-primary text-primary'
               }`} 
-              href="#"
+              onClick={() => onNavigate && onNavigate('collections', id === 'for-him' ? 'MEN' : id === 'for-her' ? 'WOMEN' : '')}
             >
               {linkText}
-            </a>
+            </button>
           )}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-gutter">
@@ -75,7 +79,7 @@ export default function ProductSection({
             </p>
           )}
 
-          {state === 'results' && products.map((prod, idx) => (
+          {state === 'results' && products.map((prod: any, idx: number) => (
             <ProductCard 
               key={prod.id || idx} 
               id={prod.id}
@@ -84,6 +88,10 @@ export default function ProductSection({
               price={prod.price} 
               image={prod.image || NEUTRAL_PRODUCT_PLACEHOLDER} 
               isDark={isDark} 
+              user={user}
+              isWishlistedInitial={userWishlistIds.includes(prod.id)}
+              onNavigate={onNavigate}
+              showToast={showToast}
               onQuickShop={onQuickShop}
             />
           ))}

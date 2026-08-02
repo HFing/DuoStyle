@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createAdminApi } from './utils/admin-api.ts';
+import { createAdminApi } from '../services/adminService.ts';
 
 function recordingClient(responses = {}) {
   const calls = [];

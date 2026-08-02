@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveProductImage } from './utils/product-image.ts';
+import { resolveProductImage } from '../utils/product-image.ts';
 
 test('missing product images use the shared neutral placeholder', () => {
   assert.equal(resolveProductImage(null), '/product-placeholder.svg');

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeAdminOrders } from './utils/admin-orders.ts';
+import { normalizeAdminOrders } from '../services/adminOrderService.ts';
 
 test('admin orders unwraps the paginated API response into an array', () => {
   const orders = [{ id: 1, totalAmount: 299000 }];

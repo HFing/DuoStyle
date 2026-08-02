@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { formatVND } from '../components/ProductCard';
-import { calculateCheckoutSubtotal } from '../utils/checkout';
+import { calculateCheckoutSubtotal } from '../services/checkoutService';
 import { resolveProductImage } from '../utils/product-image';
 
 export default function CartPage({ 
@@ -12,6 +12,14 @@ export default function CartPage({
   onCartCountChange, 
   onCheckout,
   showToast 
+}: {
+  onNavigate: any;
+  cartItems?: any[];
+  onUpdateQuantity?: any;
+  onRemoveItem?: any;
+  onCartCountChange?: any;
+  onCheckout?: any;
+  showToast?: (msg: string, type?: 'success' | 'error') => void;
 }) {
   const [localCartItems, setLocalCartItems] = useState([]);
 
@@ -39,7 +47,7 @@ export default function CartPage({
     }
   }, [sharedCartItems]);
 
-  const triggerToast = (msg, type = 'success') => {
+  const triggerToast = (msg: string, type: 'success' | 'error' = 'success') => {
     if (showToast) {
       showToast(msg, type);
     }

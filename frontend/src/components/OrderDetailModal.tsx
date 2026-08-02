@@ -4,7 +4,17 @@ import { resolveProductImage } from '../utils/product-image';
 import { formatVND } from './ProductCard';
 import WriteReviewModal from './WriteReviewModal';
 
-export default function OrderDetailModal({ isOpen, onClose, orderCode, showToast }) {
+export default function OrderDetailModal({ 
+  isOpen, 
+  onClose, 
+  orderCode, 
+  showToast 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  orderCode: string | null; 
+  showToast?: (msg: string, type?: 'success' | 'error') => void; 
+}) {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');

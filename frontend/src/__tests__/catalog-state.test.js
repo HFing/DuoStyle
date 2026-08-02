@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { catalogFailureState, normalizeCatalogProducts } from './utils/catalog-state.ts';
+import { catalogFailureState, normalizeCatalogProducts } from '../services/catalogService.ts';
 
 test('catalog normalization maps only backend products and uses the neutral image placeholder', () => {
   assert.deepEqual(normalizeCatalogProducts({ content: [{

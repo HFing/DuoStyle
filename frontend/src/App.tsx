@@ -1,4 +1,5 @@
 import { useCallback, useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import api from './api/axios';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -20,17 +21,50 @@ import NotFoundPage from './pages/NotFoundPage';
 import ToastNotification from './components/ToastNotification';
 import AiChatBox from './components/AiChatBox';
 import InfoModal, { InfoModalTab } from './components/InfoModal';
-import { loadHomeSections, mapCartItems } from './utils/home-products';
-import { requireCartVariant, runAuthoritativeCartMutation } from './utils/cart-mutations';
-import { resolveSelectedProductId } from './utils/product-detail';
-import { readGoogleLoginResult } from './utils/google-auth';
+import { loadHomeSections, mapCartItems } from './services/productService';
+import { requireCartVariant, runAuthoritativeCartMutation } from './services/cartService';
+import { resolveSelectedProductId } from './services/productService';
+import { readGoogleLoginResult } from './services/authService';
+import { fetchWishlistApi } from './services/wishlistService';
+import { useWishlist } from './hooks/useWishlist';
 import {
   createCheckoutHistoryState,
   resolveInitialNavigation,
   resolveAccessControlledPage,
   resolvePostLoginNavigation,
   resolveProfileTabIntent,
-} from './utils/checkout';
+} from './services/checkoutService';
+
+function getPageFromPathname(pathname: string): string {
+  if (pathname === '/' || pathname === '') return 'home';
+  if (pathname.startsWith('/collections')) return 'collections';
+  if (pathname.startsWith('/products')) return 'product-detail';
+  if (pathname.startsWith('/cart')) return 'cart';
+  if (pathname.startsWith('/checkout')) return 'checkout';
+  if (pathname.startsWith('/payment-result')) return 'payment-result';
+  if (pathname.startsWith('/profile')) return 'profile';
+  if (pathname.startsWith('/login')) return 'login';
+  if (pathname.startsWith('/register')) return 'register';
+  if (pathname.startsWith('/admin')) return 'admin';
+  return 'not-found';
+}
+
+function getPathnameFromPage(page: string, prodId?: number | null): string {
+  switch (page) {
+    case 'home': return '/';
+    case 'collections': return '/collections';
+    case 'product-detail':
+    case 'product': return prodId ? `/products/${prodId}` : '/collections';
+    case 'cart': return '/cart';
+    case 'checkout': return '/checkout';
+    case 'payment-result': return '/payment-result';
+    case 'profile': return '/profile';
+    case 'login': return '/login';
+    case 'register': return '/register';
+    case 'admin': return '/admin';
+    default: return '/';
+  }
+}
 
 const initialNavigation = resolveInitialNavigation(window.location.search, window.history.state);
 const initialGoogleLoginResult = readGoogleLoginResult(window.location.search);
@@ -39,9 +73,9 @@ const getStoredNavState = () => {
   if (initialNavigation.page === 'profile' && initialNavigation.autoOpenOrderCode) {
     return { page: 'profile', cat: '', prodId: null, searchKw: '', subCatId: null };
   }
-  const hash = window.location.hash.replace('#', '').trim();
+  const pageFromPath = getPageFromPathname(window.location.pathname);
   const savedPage = sessionStorage.getItem('ds_page');
-  const page = hash || savedPage || initialNavigation.page || 'home';
+  const page = pageFromPath !== 'home' ? pageFromPath : (savedPage || initialNavigation.page || 'home');
   const cat = sessionStorage.getItem('ds_cat_filter') || '';
   const prodId = sessionStorage.getItem('ds_prod_id') ? Number(sessionStorage.getItem('ds_prod_id')) : null;
   const searchKw = sessionStorage.getItem('ds_search_kw') || '';
@@ -51,14 +85,30 @@ const getStoredNavState = () => {
 };
 
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const savedState = getStoredNavState();
   const [currentPage, setCurrentPage] = useState(savedState.page);
+
+  useEffect(() => {
+    const pageFromUrl = getPageFromPathname(location.pathname);
+    if (pageFromUrl && pageFromUrl !== currentPage) {
+      setCurrentPage(pageFromUrl);
+    }
+  }, [location.pathname]);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState(savedState.cat);
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(savedState.subCatId);
   const [selectedProductId, setSelectedProductId] = useState(savedState.prodId);
   const [searchKeyword, setSearchKeyword] = useState(savedState.searchKw);
   const [authMsg, setAuthMsg] = useState('');
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [cartItems, setCartItems] = useState([]);
   const [cartCount, setCartCount] = useState(0);
   const [forHimProducts, setForHimProducts] = useState([]);
@@ -78,9 +128,11 @@ export default function App() {
     type: initialNavigation.toastType || (initialNavigation.recoveryMessage ? 'error' : 'success'),
   });
 
-  const showToast = (message, type = 'success') => {
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ show: true, message, type });
   };
+
+  const { userWishlistIds, reloadWishlist } = useWishlist(user, showToast);
 
   const reloadCart = useCallback(async () => {
     try {
@@ -135,6 +187,9 @@ export default function App() {
         const resolvedUser = res.data?.data || null;
         setUser(resolvedUser);
         if (resolvedUser) {
+          try {
+            localStorage.setItem('user', JSON.stringify(resolvedUser));
+          } catch {}
           await reloadCart();
           if (initialGoogleLoginResult === 'success') {
             setToast({
@@ -146,6 +201,10 @@ export default function App() {
             sessionStorage.setItem('ds_page', 'home');
           }
         } else {
+          setUser(null);
+          try {
+            localStorage.removeItem('user');
+          } catch {}
           setCartItems([]);
           setCartCount(0);
         }
@@ -166,6 +225,9 @@ export default function App() {
       })
       .catch(() => {
         setUser(null);
+        try {
+          localStorage.removeItem('user');
+        } catch {}
         setCartItems([]);
         setCartCount(0);
         if (currentPage === 'profile') {
@@ -174,7 +236,7 @@ export default function App() {
           handleNavigate('not-found');
         }
       });
-  }, [loadHomeProducts, reloadCart, currentPage]);
+  }, [loadHomeProducts, reloadCart]);
 
   const handleNavigate = (
     page,
@@ -205,6 +267,10 @@ export default function App() {
       window.history.replaceState({}, '', window.location.pathname);
     }
     setCurrentPage(targetPage);
+    const targetPath = getPathnameFromPage(targetPage, prodId);
+    if (location.pathname !== targetPath) {
+      navigate(targetPath);
+    }
     if (targetPage === 'profile') {
       setProfileTabIntent(resolveProfileTabIntent(navigationIntent));
     }
@@ -232,7 +298,9 @@ export default function App() {
       if (selectedSubCategoryId) sessionStorage.setItem('ds_subcat_id', String(selectedSubCategoryId));
       else sessionStorage.removeItem('ds_subcat_id');
 
-      window.location.hash = currentPage;
+      if (window.location.hash) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
     }
   }, [currentPage, activeCategoryFilter, selectedProductId, searchKeyword, selectedSubCategoryId]);
 
@@ -376,6 +444,9 @@ export default function App() {
 
   const handleLoginSuccess = async (userData) => {
     setUser(userData);
+    try {
+      localStorage.setItem('user', JSON.stringify(userData));
+    } catch {}
     const authenticatedCartItems = await reloadCart();
     showToast(`Đăng nhập thành công! Chào mừng ${userData?.fullName || 'bạn'}.`, 'success');
     const destination = resolvePostLoginNavigation({
@@ -400,6 +471,9 @@ export default function App() {
       console.log("Logged out session");
     }
     setUser(null);
+    try {
+      localStorage.removeItem('user');
+    } catch {}
     setCartItems([]);
     setCartCount(0);
     showToast('Đã đăng xuất tài khoản thành công!', 'success');
@@ -459,6 +533,10 @@ export default function App() {
             products={forHimProducts}
             loading={homeLoading}
             error={homeError}
+            user={user}
+            userWishlistIds={userWishlistIds}
+            onNavigate={handleNavigate}
+            showToast={showToast}
             onRetry={loadHomeProducts}
             onQuickShop={handleQuickShop}
           />
@@ -472,6 +550,10 @@ export default function App() {
             products={forHerProducts}
             loading={homeLoading}
             error={homeError}
+            user={user}
+            userWishlistIds={userWishlistIds}
+            onNavigate={handleNavigate}
+            showToast={showToast}
             onRetry={loadHomeProducts}
             onQuickShop={handleQuickShop}
           />
@@ -485,6 +567,10 @@ export default function App() {
             products={newArrivals}
             loading={homeLoading}
             error={homeError}
+            user={user}
+            userWishlistIds={userWishlistIds}
+            onNavigate={handleNavigate}
+            showToast={showToast}
             onRetry={loadHomeProducts}
             onQuickShop={handleQuickShop}
           />
@@ -499,6 +585,9 @@ export default function App() {
           activeCategoryFilter={activeCategoryFilter}
           initialSubCategoryId={selectedSubCategoryId}
           searchKeyword={searchKeyword}
+          user={user}
+          userWishlistIds={userWishlistIds}
+          onNavigate={handleNavigate}
           onQuickView={(product) => handleNavigate('product-detail', '', product.id)}
           showToast={showToast}
         />
@@ -519,6 +608,8 @@ export default function App() {
       {currentPage === 'product-detail' && (
         <ProductDetailPage 
           productId={selectedProductId}
+          user={user}
+          userWishlistIds={userWishlistIds}
           onAddToCart={handleAddToCart}
           onBuyNow={handleBuyNow}
           onNavigate={handleNavigate}

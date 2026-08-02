@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildProductRequest, buildStockProductRequest, validateProductDraft } from './utils/admin-api.ts';
+import { buildProductRequest, buildStockProductRequest, validateProductDraft } from '../services/adminService.ts';
 
 const product = {
   id: 4,

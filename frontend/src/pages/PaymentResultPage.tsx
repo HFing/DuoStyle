@@ -1,4 +1,4 @@
-import { classifyPaymentResult, getPaymentResultActions, readPaymentResult } from '../utils/checkout';
+import { classifyPaymentResult, getPaymentResultActions, readPaymentResult } from '../services/checkoutService';
 
 const RESULT_CONTENT = {
   'order-placed': {

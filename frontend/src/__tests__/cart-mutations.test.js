@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { requireCartVariant, runAuthoritativeCartMutation } from './utils/cart-mutations.ts';
+import { requireCartVariant, runAuthoritativeCartMutation } from '../services/cartService.ts';
 
 test('requireCartVariant preserves the exact selected database variant', () => {
   const blue = { id: 101, size: 'M', color: 'Blue', price: 500000, stockQuantity: 2 };

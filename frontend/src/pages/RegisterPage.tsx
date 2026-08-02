@@ -1,8 +1,14 @@
 import { useState } from 'react';
 import api from '../api/axios';
-import { getGoogleAuthorizationUrl } from '../utils/google-auth';
+import { getGoogleAuthorizationUrl } from '../services/authService';
 
-export default function RegisterPage({ onNavigate }) {
+export default function RegisterPage({ 
+  onNavigate, 
+  showToast 
+}: { 
+  onNavigate: any; 
+  showToast?: (msg: string, type?: 'success' | 'error') => void; 
+}) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -201,7 +207,7 @@ export default function RegisterPage({ onNavigate }) {
                   />
                 </div>
                 <label className="font-body-md text-on-surface-variant cursor-pointer select-none text-sm" htmlFor="terms">
-                  Tôi đồng ý với <a className="text-primary underline underline-offset-4 hover:opacity-70 transition-opacity font-bold" href="#">Điều Khoản Dịch Vụ</a> & <a className="text-primary underline underline-offset-4 hover:opacity-70 transition-opacity font-bold" href="#">Chính Sách Bảo Mật</a>.
+                  Tôi đồng ý với <a className="text-primary underline underline-offset-4 hover:opacity-70 transition-opacity font-bold" href="#" onClick={(e) => e.preventDefault()}>Điều Khoản Dịch Vụ</a> & <a className="text-primary underline underline-offset-4 hover:opacity-70 transition-opacity font-bold" href="#" onClick={(e) => e.preventDefault()}>Chính Sách Bảo Mật</a>.
                 </label>
               </div>
             </div>

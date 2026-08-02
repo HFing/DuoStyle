@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { buildOrderPayload, readPaymentResult } from './utils/checkout.ts';
-import * as checkout from './utils/checkout.ts';
+import { buildOrderPayload, readPaymentResult } from '../services/checkoutService.ts';
+import * as checkout from '../services/checkoutService.ts';
 
 test('cart checkout total equals the database variant subtotal without voucher or VAT adjustments', () => {
   assert.equal(typeof checkout.calculateCheckoutSubtotal, 'function');

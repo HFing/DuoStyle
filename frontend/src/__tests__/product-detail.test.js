@@ -6,8 +6,8 @@ import {
   isProductVariantActionable,
   mapProductDetail,
   resolveSelectedProductId,
-} from './utils/product-detail.ts';
-import * as productDetail from './utils/product-detail.ts';
+} from '../services/productService.ts';
+import * as productDetail from '../services/productService.ts';
 
 test('size and color selection resolves the exact in-stock variant', () => {
   assert.equal(typeof productDetail.getVariantSelection, 'function');

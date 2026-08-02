@@ -1,25 +1,76 @@
-import React, { useState } from 'react';
-import api from '../api/axios';
+import React, { useState, useEffect } from 'react';
+import { addToWishlistApi, removeFromWishlistApi } from '../services/wishlistService';
 
-export const formatVND = (price) => {
-  if (typeof price !== 'number') {
-    price = Number(price) || 0;
-  }
-  return price.toLocaleString('vi-VN') + ' VNĐ';
+export const formatVND = (price: any) => {
+  let numPrice = typeof price !== 'number' ? Number(price) || 0 : price;
+  return numPrice.toLocaleString('vi-VN') + ' VNĐ';
 };
 
-export default function ProductCard({ id, category, name, price, image, isDark = false, onQuickShop }) {
-  const [isFavorite, setIsFavorite] = useState(false);
+interface ProductCardProps {
+  id: number;
+  category?: string;
+  name: string;
+  price: number;
+  image?: string;
+  isDark?: boolean;
+  user?: any;
+  isWishlistedInitial?: boolean;
+  onQuickShop?: (id: number) => void;
+  onNavigate?: (page: string, filter?: string, prodId?: any, extraMsg?: string) => void;
+  showToast?: (msg: string, type?: 'success' | 'error') => void;
+}
 
-  const toggleWishlist = (e) => {
+export default function ProductCard({
+  id,
+  category,
+  name,
+  price,
+  image,
+  isDark = false,
+  user,
+  isWishlistedInitial = false,
+  onQuickShop,
+  onNavigate,
+  showToast,
+}: ProductCardProps) {
+  const [isFavorite, setIsFavorite] = useState(isWishlistedInitial);
+
+  useEffect(() => {
+    setIsFavorite(isWishlistedInitial);
+  }, [isWishlistedInitial]);
+
+  const toggleWishlist = async (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    if (!user) {
+      if (showToast) {
+        showToast('Vui lòng đăng nhập để thêm sản phẩm vào danh sách yêu thích!', 'error');
+      }
+      if (onNavigate) {
+        onNavigate('login', '', null, 'Vui lòng đăng nhập để sử dụng danh sách yêu thích.');
+      }
+      return;
+    }
+
     const nextState = !isFavorite;
     setIsFavorite(nextState);
 
     if (nextState) {
-      api.post(`/wishlist/${id}`).catch(() => console.log('Wishlist update failed'));
+      const ok = await addToWishlistApi(id);
+      if (ok) {
+        if (showToast) showToast(`Đã thêm "${name}" vào Danh sách yêu thích!`, 'success');
+      } else {
+        setIsFavorite(false);
+        if (showToast) showToast('Không thể thêm sản phẩm vào yêu thích. Vui lòng thử lại.', 'error');
+      }
     } else {
-      api.delete(`/wishlist/${id}`).catch(() => console.log('Wishlist remove failed'));
+      const ok = await removeFromWishlistApi(id);
+      if (ok) {
+        if (showToast) showToast(`Đã xóa "${name}" khỏi Danh sách yêu thích!`, 'success');
+      } else {
+        setIsFavorite(true);
+        if (showToast) showToast('Không thể xóa khỏi yêu thích. Vui lòng thử lại.', 'error');
+      }
     }
   };
 

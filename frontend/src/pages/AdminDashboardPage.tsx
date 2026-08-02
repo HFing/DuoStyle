@@ -14,9 +14,9 @@ import AdminCategoriesTab from '../components/admin/AdminCategoriesTab';
 import AdminVouchersTab from '../components/admin/AdminVouchersTab';
 import AdminBannersTab from '../components/admin/AdminBannersTab';
 import AdminReviewsTab from '../components/admin/AdminReviewsTab';
-import { normalizeAdminOrders } from '../utils/admin-orders';
-import { buildProductRequest, buildStockProductRequest, createAdminApi, validateProductDraft } from '../utils/admin-api';
-import { buildCategoryGroups, findCategoryGroup, firstSelectableCategory } from '../utils/category-selection';
+import { normalizeAdminOrders } from '../services/adminOrderService';
+import { buildProductRequest, buildStockProductRequest, createAdminApi, validateProductDraft } from '../services/adminService';
+import { buildCategoryGroups, findCategoryGroup, firstSelectableCategory } from '../services/categoryService';
 
 const adminApi = createAdminApi(api);
 
@@ -107,6 +107,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
 
   // Admin Detail Edit Product State
   const [detailName, setDetailName] = useState('');
+  const [detailSlug, setDetailSlug] = useState('');
   const [detailGender, setDetailGender] = useState('MEN');
   const [detailSubCatId, setDetailSubCatId] = useState<any>(1);
   const [detailPrice, setDetailPrice] = useState('');
@@ -684,6 +685,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
   const handleOpenAdminDetail = (prod: any) => {
     setEditingAdminDetailProduct(prod);
     setDetailName(prod.name || '');
+    setDetailSlug(prod.slug || generateSlug(prod.name || ''));
     setDetailGender(prod.genderTarget || 'MEN');
     setDetailSubCatId(prod.categoryId || 1);
     setDetailPrice(prod.basePrice ? String(prod.basePrice) : '');
@@ -703,7 +705,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
 
     const payload = buildProductRequest({
       name: detailName,
-      slug: editingAdminDetailProduct.slug || generateSlug(detailName),
+      slug: detailSlug.trim() || generateSlug(detailName),
       genderTarget: detailGender,
       categoryId: Number(detailSubCatId),
       basePrice: Number(detailPrice),
@@ -713,7 +715,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
       variants: detailVariants.map((variant: any) => ({
         ...variant,
         color: variant.color || detailColor,
-        sku: variant.sku || `${detailSku || editingAdminDetailProduct.slug}-${variant.size}`.toUpperCase(),
+        sku: variant.sku || `${detailSku || detailSlug || 'SKU'}-${variant.size}`.toUpperCase(),
         price: variant.price ?? Number(detailPrice),
       })),
     });
@@ -904,6 +906,8 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
               setEditingAdminDetailProduct={setEditingAdminDetailProduct}
               detailName={detailName}
               setDetailName={setDetailName}
+              detailSlug={detailSlug}
+              setDetailSlug={setDetailSlug}
               detailGender={detailGender}
               setDetailGender={setDetailGender}
               detailSubCatId={detailSubCatId}
@@ -1000,8 +1004,8 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
           <div className="border-t border-outline-variant py-6 flex justify-between items-center">
             <span className="font-label-caps text-label-caps">© 2026 DUOSTYLE GLOBAL MANAGEMENT</span>
             <div className="flex gap-6 font-label-caps text-label-caps">
-              <a className="hover:text-primary" href="#">System Status</a>
-              <a className="hover:text-primary" href="#">Documentation</a>
+              <a className="hover:text-primary" href="#" onClick={(e) => e.preventDefault()}>System Status</a>
+              <a className="hover:text-primary" href="#" onClick={(e) => e.preventDefault()}>Documentation</a>
             </div>
           </div>
         </footer>

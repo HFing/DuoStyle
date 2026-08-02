@@ -1,11 +1,29 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
-import { formatVND } from '../components/ProductCard';
+import ProductCard, { formatVND } from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
-import { catalogFailureState, normalizeCatalogProducts } from '../utils/catalog-state';
+import { catalogFailureState, normalizeCatalogProducts } from '../services/catalogService';
 
-export default function CollectionsPage({ onQuickView, activeCategoryFilter = '', searchKeyword = '', initialSubCategoryId = null }) {
+export default function CollectionsPage({
+  onQuickView,
+  activeCategoryFilter = '',
+  searchKeyword = '',
+  initialSubCategoryId = null,
+  user,
+  userWishlistIds = [],
+  onNavigate,
+  showToast,
+}: {
+  onQuickView: any;
+  activeCategoryFilter?: string;
+  searchKeyword?: string;
+  initialSubCategoryId?: any;
+  user?: any;
+  userWishlistIds?: number[];
+  onNavigate?: any;
+  showToast?: (msg: string, type?: 'success' | 'error') => void;
+}) {
   const [products, setProducts] = useState([]);
   const [categoriesList, setCategoriesList] = useState([]);
   const [selectedGender, setSelectedGender] = useState(activeCategoryFilter || '');
@@ -347,35 +365,19 @@ export default function CollectionsPage({ onQuickView, activeCategoryFilter = ''
             <div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-12">
                 {products.slice((currentPage - 1) * 12, currentPage * 12).map((product) => (
-                  <div 
-                    key={product.id} 
-                    onClick={() => onQuickView && onQuickView(product)}
-                    className="product-card cursor-pointer group transition-all duration-300"
-                  >
-                    <div className="relative aspect-[4/5] overflow-hidden bg-surface-container-low mb-4 rounded border border-outline-variant/10">
-                      <img 
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                        src={product.image} 
-                        alt={product.name}
-                      />
-                      <div className="product-card-overlay absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (onQuickView) onQuickView(product);
-                          }}
-                          className="bg-white text-black font-label-caps text-label-caps px-6 py-3 tracking-widest hover:bg-black hover:text-white transition-colors cursor-pointer rounded-sm shadow-md font-bold"
-                        >
-                          Xem Chi Tiết
-                        </button>
-                      </div>
-                    </div>
-                    <div className="text-left">
-                      <p className="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest mb-1">{product.category}</p>
-                      <h4 className="font-body-md text-sm font-bold text-primary group-hover:text-secondary transition-colors line-clamp-1">{product.name}</h4>
-                      <p className="font-label-caps text-xs text-primary font-bold mt-1.5">{formatVND(product.price)}</p>
-                    </div>
-                  </div>
+                  <ProductCard
+                    key={product.id}
+                    id={product.id}
+                    category={product.category}
+                    name={product.name}
+                    price={product.price}
+                    image={product.image}
+                    user={user}
+                    isWishlistedInitial={userWishlistIds.includes(product.id)}
+                    onNavigate={onNavigate}
+                    showToast={showToast}
+                    onQuickShop={() => onQuickView && onQuickView(product)}
+                  />
                 ))}
               </div>
 

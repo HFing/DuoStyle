@@ -9,11 +9,28 @@ import {
   isProductVariantActionable,
   mapProductDetail,
   productSizeLabel,
-} from '../utils/product-detail';
+} from '../services/productService';
+import { addToWishlistApi, removeFromWishlistApi } from '../services/wishlistService';
 
 const NEUTRAL_PRODUCT_PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000"%3E%3Crect width="800" height="1000" fill="%23e7e5e4"/%3E%3Cpath d="M300 430h200v140H300z" fill="none" stroke="%2378716c" stroke-width="12"/%3E%3Ccircle cx="360" cy="475" r="22" fill="%2378716c"/%3E%3Cpath d="m320 545 58-58 42 42 32-32 48 48" fill="none" stroke="%2378716c" stroke-width="12"/%3E%3C/svg%3E';
 
-export default function ProductDetailPage({ productId, onAddToCart, onBuyNow, onNavigate, showToast }) {
+export default function ProductDetailPage({
+  productId,
+  user,
+  userWishlistIds = [],
+  onAddToCart,
+  onBuyNow,
+  onNavigate,
+  showToast,
+}: {
+  productId: any;
+  user?: any;
+  userWishlistIds?: number[];
+  onAddToCart?: any;
+  onBuyNow?: any;
+  onNavigate?: any;
+  showToast?: (msg: string, type?: 'success' | 'error') => void;
+}) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -24,8 +41,14 @@ export default function ProductDetailPage({ productId, onAddToCart, onBuyNow, on
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [openAccordion, setOpenAccordion] = useState('details');
-  const [isWishlistSaved, setIsWishlistSaved] = useState(false);
+  const [isWishlistSaved, setIsWishlistSaved] = useState(() => Number(productId) > 0 && userWishlistIds.includes(Number(productId)));
   const [relatedProducts, setRelatedProducts] = useState([]);
+
+  useEffect(() => {
+    if (productId) {
+      setIsWishlistSaved(userWishlistIds.includes(Number(productId)));
+    }
+  }, [productId, userWishlistIds]);
 
   // Review states
   const [reviewsSummary, setReviewsSummary] = useState(null);
@@ -127,15 +150,33 @@ export default function ProductDetailPage({ productId, onAddToCart, onBuyNow, on
     }
   };
 
-  const toggleWishlist = () => {
+  const toggleWishlist = async () => {
     if (!requestedProduct) return;
+    if (!user) {
+      if (showToast) showToast('Vui lòng đăng nhập để thêm sản phẩm vào danh sách yêu thích!', 'error');
+      if (onNavigate) onNavigate('login', '', null, 'Vui lòng đăng nhập để sử dụng danh sách yêu thích.');
+      return;
+    }
+
     const nextState = !isWishlistSaved;
     setIsWishlistSaved(nextState);
+
     if (nextState) {
-      api.post(`/wishlist/${requestedProduct.id}`).catch(() => setIsWishlistSaved(false));
-      if (showToast) showToast(`Đã thêm "${requestedProduct.name}" vào Danh sách yêu thích!`, 'success');
+      const ok = await addToWishlistApi(requestedProduct.id);
+      if (ok) {
+        if (showToast) showToast(`Đã thêm "${requestedProduct.name}" vào Danh sách yêu thích!`, 'success');
+      } else {
+        setIsWishlistSaved(false);
+        if (showToast) showToast('Không thể lưu sản phẩm vào CSDL. Vui lòng thử lại.', 'error');
+      }
     } else {
-      api.delete(`/wishlist/${requestedProduct.id}`).catch(() => setIsWishlistSaved(true));
+      const ok = await removeFromWishlistApi(requestedProduct.id);
+      if (ok) {
+        if (showToast) showToast(`Đã xóa "${requestedProduct.name}" khỏi Danh sách yêu thích!`, 'success');
+      } else {
+        setIsWishlistSaved(true);
+        if (showToast) showToast('Không thể xóa khỏi CSDL. Vui lòng thử lại.', 'error');
+      }
     }
   };
 

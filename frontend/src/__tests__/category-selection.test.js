@@ -4,7 +4,7 @@ import {
   buildCategoryGroups,
   findCategoryGroup,
   firstSelectableCategory,
-} from './utils/category-selection.ts';
+} from '../services/categoryService.ts';
 
 const tree = [
   {

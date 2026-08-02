@@ -1,11 +1,17 @@
 import { useState } from 'react';
 
-export default function Newsletter() {
+interface NewsletterProps {
+  showToast?: (message: string, type?: 'success' | 'error') => void;
+}
+
+export default function Newsletter({ showToast }: NewsletterProps) {
   const [email, setEmail] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Cảm ơn bạn đã đăng ký nhận bản tin DuoStyle với email: ${email}! Mã giảm giá 10% đã gửi tới hòm thư của bạn.`);
+    if (showToast) {
+      showToast(`Cảm ơn bạn đã đăng ký nhận bản tin DuoStyle với email: ${email}! Mã giảm giá 10% đã gửi tới hòm thư của bạn.`, 'success');
+    }
     setEmail('');
   };
 

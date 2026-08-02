@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { buildAiChatRequest, consumeSseStream, type AiUiMessage } from '../utils/ai-chat';
+import { buildAiChatRequest, consumeSseStream, type AiUiMessage } from '../services/aiChatService';
 import { parseChatMarkdown, type InlineToken } from '../utils/chat-markdown';
 
 const AI_STREAM_URL = 'http://localhost:8080/api/v1/ai/chat/stream';
@@ -15,7 +15,7 @@ function ChatMarkdown({ content }: { content: string }) {
     {parseChatMarkdown(content).map((block, index) => {
       if (block.type === 'ul') return <ul key={index} className="list-disc pl-5 space-y-1">{block.items.map((item, itemIndex) => <li key={itemIndex}><InlineMarkdown tokens={item} /></li>)}</ul>;
       if (block.type === 'ol') return <ol key={index} className="list-decimal pl-5 space-y-1">{block.items.map((item, itemIndex) => <li key={itemIndex}><InlineMarkdown tokens={item} /></li>)}</ol>;
-      if (block.type === 'p') return <p key={index}><InlineMarkdown tokens={block.content} /></p>;
+      if (block.type === 'paragraph') return <p key={index}><InlineMarkdown tokens={block.content} /></p>;
       return null;
     })}
   </div>;
@@ -72,11 +72,16 @@ export default function AiChatBox() {
         <button onClick={() => setOpen(false)} className="text-xl cursor-pointer">×</button>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-surface-container-low">
-        {messages.map((message, index) => <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-          <div className={`max-w-[85%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${message.role === 'user' ? 'bg-primary text-white' : 'bg-white border border-outline-variant text-on-surface'}`}>
-            {message.role === 'assistant' ? <ChatMarkdown content={message.content} /> : message.content}
-          </div>
-        </div>)}
+        {messages.map((message, index) => {
+          if (message.role === 'assistant' && !message.content) return null;
+          return (
+            <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[85%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${message.role === 'user' ? 'bg-primary text-white' : 'bg-white border border-outline-variant text-on-surface'}`}>
+                {message.role === 'assistant' ? <ChatMarkdown content={message.content} /> : message.content}
+              </div>
+            </div>
+          );
+        })}
         {loading && <div className="text-xs text-on-surface-variant">DuoStyle AI đang trả lời...</div>}
       </div>
       <form onSubmit={send} className="p-3 border-t border-outline-variant flex gap-2">

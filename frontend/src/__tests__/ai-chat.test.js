@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildAiChatRequest, consumeSseStream } from './utils/ai-chat.ts';
-import { parseChatMarkdown } from './utils/chat-markdown.ts';
+import { buildAiChatRequest, consumeSseStream } from '../services/aiChatService.ts';
+import { parseChatMarkdown } from '../utils/chat-markdown.ts';
 
 test('chat request sends the latest user message and at most ten prior messages', () => {
   const messages = Array.from({ length: 12 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: `m${i}` }));
