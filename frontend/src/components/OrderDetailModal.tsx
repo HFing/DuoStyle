@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
+import { resolveProductImage } from '../utils/product-image';
 import { formatVND } from './ProductCard';
 import WriteReviewModal from './WriteReviewModal';
 
@@ -126,7 +127,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderCode, showToast
                     const total = price * qty;
                     const sizeLabel = item.size === 'FREE_SIZE' ? 'FREE' : item.size || 'M';
 
-                    const itemImage = item.imageUrl || 'https://images.unsplash.com/photo-1625910513413-7fc4388cb9b6?auto=format&fit=crop&w=400&q=80';
+                    const itemImage = resolveProductImage(item.imageUrl);
 
                     return (
                       <div key={idx} className="p-4 flex items-center justify-between gap-4 hover:bg-surface-container/20 transition-colors">

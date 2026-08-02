@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatVND } from '../ProductCard';
 import Pagination from '../Pagination';
+import { buildCategoryGroups, findCategoryGroup, firstSelectableCategory } from '../../utils/category-selection';
 
 interface AdminProductsTabProps {
   products?: any[];
@@ -50,7 +51,7 @@ interface AdminProductsTabProps {
   setNewProdSizeL: (val: any) => void;
   newProdSizeXL: any;
   setNewProdSizeXL: (val: any) => void;
-  CATEGORY_MAP: any;
+  categoryTree: any[];
 
   // Stock edit modal props
   editingStockProduct: any;
@@ -113,7 +114,6 @@ export default function AdminProductsTab({
   handleCreateProductSubmit,
   newProdName,
   setNewProdName,
-  newProdGender,
   setNewProdGender,
   newProdSubCatId,
   setNewProdSubCatId,
@@ -146,7 +146,7 @@ export default function AdminProductsTab({
   setNewProdSizeL,
   newProdSizeXL,
   setNewProdSizeXL,
-  CATEGORY_MAP = {},
+  categoryTree = [],
   editingStockProduct,
   setEditingStockProduct,
   newStockValues = {},
@@ -154,8 +154,6 @@ export default function AdminProductsTab({
   handleDeleteSizeInStockEdit,
   addSizeName,
   setAddSizeName,
-  addSizeCustom,
-  setAddSizeCustom,
   addSizeStock,
   setAddSizeStock,
   handleAddNewSizeToStockEdit,
@@ -164,7 +162,6 @@ export default function AdminProductsTab({
   setEditingAdminDetailProduct,
   detailName,
   setDetailName,
-  detailGender,
   setDetailGender,
   detailSubCatId,
   setDetailSubCatId,
@@ -195,6 +192,9 @@ export default function AdminProductsTab({
   const safeGalleryImages = Array.isArray(galleryImages) ? galleryImages : [];
   const safeDetailGalleryImgs = Array.isArray(detailGalleryImgs) ? detailGalleryImgs : [];
   const safeDetailVariants = Array.isArray(detailVariants) ? detailVariants : [];
+  const categoryGroups = buildCategoryGroups(categoryTree);
+  const selectedNewGroup = findCategoryGroup(categoryGroups, newProdSubCatId) || categoryGroups[0] || null;
+  const selectedDetailGroup = findCategoryGroup(categoryGroups, detailSubCatId) || categoryGroups[0] || null;
 
   const filtered = safeProducts.filter(
     (p) =>
@@ -420,21 +420,23 @@ export default function AdminProductsTab({
               <div className="grid grid-cols-2 gap-4 bg-surface-container/40 p-3 rounded-lg border border-outline-variant">
                 <div>
                   <label className="font-label-caps text-xs text-primary font-bold block mb-1">
-                    1. Danh Mục Cha (Giới tính) *
+                    1. Danh Mục Cha *
                   </label>
                   <select
-                    value={newProdGender}
+                    value={selectedNewGroup?.id || ''}
                     onChange={(e) => {
-                      const gender = e.target.value;
-                      setNewProdGender(gender);
-                      const subList = CATEGORY_MAP[gender] || [];
-                      if (subList.length > 0) setNewProdSubCatId(subList[0].id);
+                      const group = categoryGroups.find((item) => item.id === Number(e.target.value));
+                      const category = firstSelectableCategory(group);
+                      if (group) setNewProdGender(group.genderTarget);
+                      if (category) setNewProdSubCatId(category.id);
                     }}
                     className="w-full p-2 border border-outline-variant rounded bg-white font-bold text-xs"
                   >
-                    <option value="MEN">Thời Trang Nam (MEN)</option>
-                    <option value="WOMEN">Thời Trang Nữ (WOMEN)</option>
-                    <option value="UNISEX">Phụ Kiện & Nước Hoa (UNISEX)</option>
+                    {categoryGroups.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name} ({group.genderTarget})
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -447,7 +449,7 @@ export default function AdminProductsTab({
                     onChange={(e) => setNewProdSubCatId(e.target.value)}
                     className="w-full p-2 border border-outline-variant rounded bg-white font-bold text-xs"
                   >
-                    {(CATEGORY_MAP[newProdGender] || []).map((cat: any) => (
+                    {(selectedNewGroup?.categories || []).map((cat: any) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.name}
                       </option>
@@ -790,36 +792,15 @@ export default function AdminProductsTab({
                       onChange={(e) => setAddSizeName(e.target.value)}
                       className="w-full p-1.5 border border-outline-variant rounded text-xs bg-white font-bold"
                     >
+                      <option value="XS">Size XS</option>
                       <option value="S">Size S</option>
                       <option value="M">Size M</option>
                       <option value="L">Size L</option>
                       <option value="XL">Size XL</option>
-                      <option value="2XL">Size 2XL</option>
-                      <option value="FREE">FREE SIZE</option>
-                      <option value="38">Size 38 (Giày)</option>
-                      <option value="39">Size 39 (Giày)</option>
-                      <option value="40">Size 40 (Giày)</option>
-                      <option value="41">Size 41 (Giày)</option>
-                      <option value="42">Size 42 (Giày)</option>
-                      <option value="43">Size 43 (Giày)</option>
-                      <option value="CUSTOM">+ Tùy Chỉnh Khác</option>
+                      <option value="XXL">Size XXL</option>
+                      <option value="FREE_SIZE">FREE SIZE</option>
                     </select>
                   </div>
-
-                  {addSizeName === 'CUSTOM' && (
-                    <div>
-                      <label className="text-[10px] font-label-caps font-bold text-primary block mb-1">
-                        Nhập Tên Size:
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="VD: 44, S-M..."
-                        value={addSizeCustom}
-                        onChange={(e) => setAddSizeCustom(e.target.value)}
-                        className="w-full p-1.5 border border-outline-variant rounded text-xs font-bold bg-white"
-                      />
-                    </div>
-                  )}
 
                   <div>
                     <label className="text-[10px] font-label-caps font-bold text-primary block mb-1">
@@ -909,21 +890,23 @@ export default function AdminProductsTab({
                 <div className="grid grid-cols-2 gap-4 bg-surface-container/40 p-3 rounded-lg border border-outline-variant">
                   <div>
                     <label className="font-label-caps text-xs text-primary font-bold block mb-1">
-                      Giới Tính / Danh Mục Cha
+                      Danh Mục Cha
                     </label>
                     <select
-                      value={detailGender}
+                      value={selectedDetailGroup?.id || ''}
                       onChange={(e) => {
-                        const gender = e.target.value;
-                        setDetailGender(gender);
-                        const subList = CATEGORY_MAP[gender] || [];
-                        if (subList.length > 0) setDetailSubCatId(subList[0].id);
+                        const group = categoryGroups.find((item) => item.id === Number(e.target.value));
+                        const category = firstSelectableCategory(group);
+                        if (group) setDetailGender(group.genderTarget);
+                        if (category) setDetailSubCatId(category.id);
                       }}
                       className="w-full p-2 border border-outline-variant rounded font-bold text-xs bg-white"
                     >
-                      <option value="MEN">Thời Trang Nam (MEN)</option>
-                      <option value="WOMEN">Thời Trang Nữ (WOMEN)</option>
-                      <option value="UNISEX">Phụ Kiện & Nước Hoa (UNISEX)</option>
+                      {categoryGroups.map((group) => (
+                        <option key={group.id} value={group.id}>
+                          {group.name} ({group.genderTarget})
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -936,7 +919,7 @@ export default function AdminProductsTab({
                       onChange={(e) => setDetailSubCatId(e.target.value)}
                       className="w-full p-2 border border-outline-variant rounded font-bold text-xs bg-white"
                     >
-                      {(CATEGORY_MAP[detailGender] || []).map((cat: any) => (
+                      {(selectedDetailGroup?.categories || []).map((cat: any) => (
                         <option key={cat.id} value={cat.id}>
                           {cat.name}
                         </option>
@@ -1144,17 +1127,13 @@ export default function AdminProductsTab({
                     onChange={(e) => setDetailAddSize(e.target.value)}
                     className="p-1.5 border border-outline-variant rounded text-xs bg-white font-bold"
                   >
+                    <option value="XS">Size XS</option>
                     <option value="S">Size S</option>
                     <option value="M">Size M</option>
                     <option value="L">Size L</option>
                     <option value="XL">Size XL</option>
-                    <option value="2XL">Size 2XL</option>
-                    <option value="FREE">FREE SIZE</option>
-                    <option value="38">Size 38</option>
-                    <option value="39">Size 39</option>
-                    <option value="40">Size 40</option>
-                    <option value="41">Size 41</option>
-                    <option value="42">Size 42</option>
+                    <option value="XXL">Size XXL</option>
+                    <option value="FREE_SIZE">FREE SIZE</option>
                   </select>
                   <input
                     type="number"

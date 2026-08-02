@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function LoadingSpinner({ fullScreen = false, text = 'Đang tải dữ liệu...' }) {
   const spinnerContent = (
     <div className="flex flex-col items-center justify-center gap-4 p-6 text-center">

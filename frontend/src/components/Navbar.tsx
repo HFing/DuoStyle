@@ -26,7 +26,7 @@ export default function Navbar({ currentPage = 'home', activeCategoryFilter = ''
           setCategoryTree(res.data.data);
         }
       })
-      .catch(err => console.log("Using static category menu"));
+      .catch(() => console.log("Category menu load error"));
   }, []);
 
   const handleSearchSubmit = (e) => {

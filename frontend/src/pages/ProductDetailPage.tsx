@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { formatVND } from '../components/ProductCard';
 import WriteReviewModal from '../components/WriteReviewModal';
@@ -80,7 +80,7 @@ export default function ProductDetailPage({ productId, onAddToCart, onBuyNow, on
         fetchReviews(productId);
 
         // Fetch related products in same category/gender
-        const gender = loadedProduct.genderTarget || 'MEN';
+        const gender = (loadedProduct as any).genderTarget || 'MEN';
         api.get(`/products?gender=${gender}&size=8`)
           .then(relRes => {
             if (!active) return;

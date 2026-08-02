@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import api from '../api/axios';
 import ToastNotification from '../components/ToastNotification';
 import { getGoogleAuthorizationUrl } from '../utils/google-auth';

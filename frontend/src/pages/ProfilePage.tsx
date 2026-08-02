@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { buildStockProductRequest, createAdminApi } from '../utils/admin-api';
 import { formatVND } from '../components/ProductCard';
@@ -67,7 +67,7 @@ export default function ProfilePage({ user, initialTab, autoOpenOrderCode, onNav
           setOrders(apiOrders);
         }
       })
-      .catch(err => console.log("No orders found"));
+      .catch(() => console.log("No orders found"));
   };
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export default function ProfilePage({ user, initialTab, autoOpenOrderCode, onNav
           setWishlist(apiWishlist);
         }
       })
-      .catch(err => console.log("No wishlist items found"));
+      .catch(() => console.log("No wishlist items found"));
 
     // Fetch Inventory data from backend (admin only)
     if (isAdmin) {
@@ -120,12 +120,12 @@ export default function ProfilePage({ user, initialTab, autoOpenOrderCode, onNav
           setInventoryProducts(res.data.data.content);
         }
       })
-      .catch(err => console.log("Inventory load error"));
+      .catch(() => console.log("Inventory load error"));
   };
 
   const removeFromWishlist = (id) => {
     setWishlist(wishlist.filter(item => item.id !== id));
-    api.delete(`/wishlist/${id}`).catch(err => console.log("Removed from local wishlist"));
+    api.delete(`/wishlist/${id}`).catch(() => console.log("Removed from local wishlist"));
   };
 
   const handleSignOut = async () => {
@@ -177,13 +177,9 @@ export default function ProfilePage({ user, initialTab, autoOpenOrderCode, onNav
         if (showToast) showToast('Cập nhật thông tin cá nhân thành công!', 'success');
         setIsEditing(false);
       }
-    } catch (err) {
+    } catch {
       if (showToast) showToast('Lỗi khi cập nhật thông tin!', 'error');
     }
-  };
-
-  const triggerToast = (msg, type = 'success') => {
-    if (showToast) showToast(msg, type);
   };
 
   // Tab definitions based on role

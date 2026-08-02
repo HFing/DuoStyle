@@ -1,36 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { formatVND } from '../components/ProductCard';
 import { calculateCheckoutSubtotal } from '../utils/checkout';
-
-
-
-const SUGGESTIONS = [
-  {
-    id: 301,
-    name: 'Quần Tây Nam Pleated Tailored Pant',
-    price: 1450000,
-    image: 'https://images.unsplash.com/photo-1551854838-212c50b4c184?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 302,
-    name: 'Túi Xách Da Cao Cấp Structured Leather Bag',
-    price: 3200000,
-    image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 303,
-    name: 'Giày Loafer Da Thật Leather Penny',
-    price: 1750000,
-    image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 304,
-    name: 'Nước Hoa Cao Cấp Essence Noir EDP',
-    price: 2400000,
-    image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=800&q=80'
-  }
-];
+import { resolveProductImage } from '../utils/product-image';
 
 export default function CartPage({ 
   onNavigate, 
@@ -58,12 +30,12 @@ export default function CartPage({
               variantDetails: `${item.color || 'Tiêu chuẩn'} / Size ${item.size || 'FREE'}`,
               price: item.price,
               quantity: item.quantity,
-              image: item.thumbnailUrl || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80'
+              image: resolveProductImage(item.thumbnailUrl)
             }));
             setLocalCartItems(apiItems);
           }
         })
-        .catch(err => console.log("Using local shopping cart items"));
+        .catch(() => setLocalCartItems([]));
     }
   }, [sharedCartItems]);
 
@@ -237,44 +209,6 @@ export default function CartPage({
         </aside>
       </div>
 
-      {/* Suggestions Section */}
-      <section className="mt-section-gap">
-        <div className="flex justify-between items-end mb-12">
-          <h2 className="font-headline-md text-headline-md italic">Gợi Ý Phối Đồ</h2>
-          <button 
-            onClick={() => onNavigate && onNavigate('collections')}
-            className="font-label-caps text-label-caps underline underline-offset-8 hover:text-secondary transition-colors cursor-pointer border-none bg-transparent font-bold"
-          >
-            XEM TẤT CẢ
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-gutter">
-          {SUGGESTIONS.map((sug) => (
-            <div key={sug.id} className="group cursor-pointer">
-              <div className="aspect-[4/5] bg-surface-container overflow-hidden mb-4 relative rounded">
-                <img 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                  src={sug.image} 
-                  alt={sug.name} 
-                />
-                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-500 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <button 
-                    onClick={() => onNavigate?.('product-detail', '', sug.id)}
-                    className="bg-white text-black px-6 py-3 font-label-caps text-label-caps shadow-xl translate-y-4 group-hover:translate-y-0 transition-transform duration-500 cursor-pointer font-bold rounded"
-                  >
-                    XEM SẢN PHẨM
-                  </button>
-                </div>
-              </div>
-              <div className="text-center">
-                <h4 className="font-label-caps text-label-caps mb-1">{sug.name}</h4>
-                <p className="font-body-md text-body-md font-bold text-primary">{formatVND(sug.price)}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
     </main>
   );
 }

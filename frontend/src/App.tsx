@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import api from './api/axios';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -69,7 +69,7 @@ export default function App() {
   const [pendingCheckout, setPendingCheckout] = useState(null);
   const [paymentResult, setPaymentResult] = useState(null);
   const [profileTabIntent, setProfileTabIntent] = useState(initialNavigation.profileTab || 'profile');
-  const [autoOpenOrderCode, setAutoOpenOrderCode] = useState(initialNavigation.autoOpenOrderCode || null);
+  const [autoOpenOrderCode] = useState(initialNavigation.autoOpenOrderCode || null);
   const [toast, setToast] = useState({
     show: Boolean(initialNavigation.recoveryMessage || initialNavigation.toastMessage),
     message: initialNavigation.recoveryMessage || initialNavigation.toastMessage || '',

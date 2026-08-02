@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function CategorySelection({ onSelectCategory }) {
   return (
     <section className="py-section-gap px-margin-desktop max-w-container-max mx-auto" id="collections">

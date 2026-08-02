@@ -17,9 +17,9 @@ export default function ProductCard({ id, category, name, price, image, isDark =
     setIsFavorite(nextState);
 
     if (nextState) {
-      api.post(`/wishlist/${id}`).catch(err => console.log(`Added #${id} to local wishlist`));
+      api.post(`/wishlist/${id}`).catch(() => console.log('Wishlist update failed'));
     } else {
-      api.delete(`/wishlist/${id}`).catch(err => console.log(`Removed #${id} from local wishlist`));
+      api.delete(`/wishlist/${id}`).catch(() => console.log('Wishlist remove failed'));
     }
   };
 

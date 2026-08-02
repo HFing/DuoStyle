@@ -1,5 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { X, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Upload, Loader2 } from 'lucide-react';
+import api from '../api/axios';
+import { createAdminApi } from '../utils/admin-api';
+
+const adminApi = createAdminApi(api);
 
 export interface BannerData {
   id?: number;
@@ -66,21 +70,7 @@ export default function AdminBannerModal({
     formData.append('file', file);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/images/upload', {
-        method: 'POST',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-
-      const resData = await response.json();
-      const uploadedUrl = resData.data || resData.url || resData.imageUrl;
+      const uploadedUrl = await adminApi.uploadImage(formData);
       if (uploadedUrl) {
         setImageUrl(uploadedUrl);
       } else {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../api/axios';
 import OrderDetailModal from '../components/OrderDetailModal';
 import AdminAiSettings from '../components/AdminAiSettings';
@@ -146,7 +146,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
           });
         }
       })
-      .catch((err) => console.log('Error fetching categories'));
+      .catch(() => console.log('Error fetching categories'));
   };
 
   useEffect(() => {
@@ -177,21 +177,21 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
       .then((res) => {
         setAdminOrders(normalizeAdminOrders(res.data?.data));
       })
-      .catch((err) => console.log('Admin orders load error'));
+      .catch(() => console.log('Admin orders load error'));
   };
 
   const fetchMonthlySales = () => {
     adminApi
       .getMonthlySales()
       .then(setMonthlySales)
-      .catch((err) => console.log('Monthly sales load error'));
+      .catch(() => console.log('Monthly sales load error'));
   };
 
   const fetchTopProducts = () => {
     adminApi
       .getTopProducts()
       .then(setTopProducts)
-      .catch((err) => console.log('Top products load error'));
+      .catch(() => console.log('Top products load error'));
   };
 
   const fetchAdminVouchers = () => {
@@ -201,7 +201,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
         const list = res.data?.data || (Array.isArray(res.data) ? res.data : []);
         setAdminVouchers(list);
       })
-      .catch((err) => console.log('Admin vouchers load error'));
+      .catch(() => console.log('Admin vouchers load error'));
   };
 
   useEffect(() => {
@@ -216,7 +216,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
     adminApi
       .getBanners()
       .then(setAdminBanners)
-      .catch((err) => console.log('Admin banners load error'));
+      .catch(() => console.log('Admin banners load error'));
   };
 
   const fetchAdminReviews = useCallback(() => {
@@ -231,7 +231,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
         setAdminReviews(page.content);
         setTotalReviewsPages(page.totalPages);
       })
-      .catch((err) => console.log('Admin reviews load error'));
+      .catch(() => console.log('Admin reviews load error'));
   }, [reviewsPage, adminReviewSearch, adminReviewRatingFilter]);
 
   useEffect(() => {
@@ -334,7 +334,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
 
     api
       .post('/admin/vouchers', payload)
-      .then((res) => {
+      .then(() => {
         if (showToast) showToast('Tạo Voucher thành công!', 'success');
         setIsAddVoucherModalOpen(false);
         fetchAdminVouchers();
@@ -348,11 +348,11 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
   const handleToggleVoucherStatus = (id: number) => {
     api
       .put(`/admin/vouchers/${id}/toggle`)
-      .then((res) => {
+      .then(() => {
         if (showToast) showToast('Cập nhật trạng thái Voucher thành công!', 'success');
         fetchAdminVouchers();
       })
-      .catch((err) => {
+      .catch(() => {
         if (showToast) showToast('Lỗi cập nhật trạng thái Voucher', 'error');
       });
   };
@@ -365,7 +365,7 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
         if (showToast) showToast('Đã xóa Voucher!', 'success');
         fetchAdminVouchers();
       })
-      .catch((err) => {
+      .catch(() => {
         if (showToast) showToast('Lỗi khi xóa Voucher', 'error');
       });
   };

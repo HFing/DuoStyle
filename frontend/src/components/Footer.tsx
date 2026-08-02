@@ -1,6 +1,4 @@
-import React from 'react';
-
-export default function Footer() {
+export default function Footer({ onNavigate }) {
   return (
     <footer className="bg-surface-container-low dark:bg-surface-container-highest border-t border-outline-variant">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-desktop py-section-gap max-w-container-max mx-auto">

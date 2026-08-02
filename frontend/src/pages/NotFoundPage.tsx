@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function NotFoundPage({ onNavigate }) {
   return (
     <main className="min-h-[70vh] pt-36 pb-section-gap px-margin-mobile md:px-margin-desktop flex items-center justify-center">

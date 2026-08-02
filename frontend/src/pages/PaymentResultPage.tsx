@@ -1,4 +1,3 @@
-import React from 'react';
 import { classifyPaymentResult, getPaymentResultActions, readPaymentResult } from '../utils/checkout';
 
 const RESULT_CONTENT = {
@@ -36,7 +35,7 @@ export default function PaymentResultPage({ result, onNavigate }) {
   const paymentResult = result || readPaymentResult(window.location.search);
   const resultKind = classifyPaymentResult(paymentResult);
   const content = RESULT_CONTENT[resultKind];
-  const actions = getPaymentResultActions(paymentResult.outcome);
+  const actions = getPaymentResultActions();
 
   return (
     <main className="min-h-[70vh] pt-36 pb-section-gap px-margin-mobile md:px-margin-desktop flex items-center justify-center">

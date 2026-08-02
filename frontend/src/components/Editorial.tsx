@@ -1,6 +1,4 @@
-import React from 'react';
-
-export default function Editorial() {
+export default function Editorial({ onExploreClick }) {
   return (
     <section className="py-section-gap px-margin-desktop max-w-container-max mx-auto overflow-hidden">
       <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-16">
