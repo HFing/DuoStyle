@@ -13,6 +13,8 @@ interface AdminOrdersTabProps {
   handleUpdateOrderStatus: (orderId: number, status: string) => void;
   setSelectedOrderCode: (code: string) => void;
   setIsDetailModalOpen: (open: boolean) => void;
+  setSelectedInvoiceOrderCode?: (code: string) => void;
+  setIsInvoiceModalOpen?: (open: boolean) => void;
 }
 
 export default function AdminOrdersTab({
@@ -26,6 +28,8 @@ export default function AdminOrdersTab({
   handleUpdateOrderStatus,
   setSelectedOrderCode,
   setIsDetailModalOpen,
+  setSelectedInvoiceOrderCode,
+  setIsInvoiceModalOpen,
 }: AdminOrdersTabProps) {
   const safeOrders = Array.isArray(adminOrders) ? adminOrders : [];
   const filtered = safeOrders.filter((o) => {
@@ -153,16 +157,31 @@ export default function AdminOrdersTab({
                   <td className="p-4 text-right font-bold text-primary font-body-md text-sm">
                     {formatVND(o.totalAmount)}
                   </td>
-                  <td className="p-4 text-right">
-                    <button
-                      onClick={() => {
-                        setSelectedOrderCode(o.orderCode);
-                        setIsDetailModalOpen(true);
-                      }}
-                      className="bg-primary text-white text-xs px-3 py-1.5 rounded hover:bg-secondary transition-colors cursor-pointer font-label-caps font-bold"
-                    >
-                      Xem Chi Tiết
-                    </button>
+                  <td className="p-4 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedOrderCode(o.orderCode);
+                          setIsDetailModalOpen(true);
+                        }}
+                        className="bg-primary text-white text-xs px-3 py-1.5 rounded hover:bg-secondary transition-colors cursor-pointer font-label-caps font-bold"
+                      >
+                        Xem Chi Tiết
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (setSelectedInvoiceOrderCode && setIsInvoiceModalOpen) {
+                            setSelectedInvoiceOrderCode(o.orderCode);
+                            setIsInvoiceModalOpen(true);
+                          }
+                        }}
+                        className="bg-surface-container text-primary border border-outline-variant hover:bg-outline-variant/30 text-xs px-2.5 py-1.5 rounded transition-colors cursor-pointer font-label-caps font-bold flex items-center gap-1"
+                        title="In Hóa Đơn"
+                      >
+                        <span className="material-symbols-outlined text-sm">print</span>
+                        In Hóa Đơn
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

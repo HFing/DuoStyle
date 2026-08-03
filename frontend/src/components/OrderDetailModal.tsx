@@ -8,12 +8,14 @@ export default function OrderDetailModal({
   isOpen, 
   onClose, 
   orderCode, 
-  showToast 
+  showToast,
+  onPrintInvoice
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
   orderCode: string | null; 
   showToast?: (msg: string, type?: 'success' | 'error') => void; 
+  onPrintInvoice?: (orderCode: string) => void;
 }) {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -213,6 +215,15 @@ export default function OrderDetailModal({
 
             {/* Modal Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/60">
+              {onPrintInvoice && (order as any)?.orderCode && (
+                <button
+                  onClick={() => onPrintInvoice((order as any).orderCode)}
+                  className="px-4 py-2.5 bg-surface-container text-primary border border-outline-variant text-xs font-label-caps uppercase font-bold rounded hover:bg-outline-variant/30 transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-sm">print</span>
+                  In Hóa Đơn
+                </button>
+              )}
               <button
                 onClick={onClose}
                 className="px-6 py-2.5 bg-primary text-white text-xs font-label-caps uppercase font-bold rounded hover:bg-secondary transition-colors cursor-pointer"
