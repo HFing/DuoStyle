@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../api/axios';
 import OrderDetailModal from '../components/OrderDetailModal';
+import OrderInvoiceModal from '../components/admin/OrderInvoiceModal';
 import AdminAiSettings from '../components/AdminAiSettings';
 import AdminBannerModal, { BannerData } from '../components/AdminBannerModal';
 
@@ -61,6 +62,8 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
   const [adminOrderSearch, setAdminOrderSearch] = useState('');
   const [ordersPage, setOrdersPage] = useState(1);
   const [selectedOrderCode, setSelectedOrderCode] = useState<string | null>(null);
+  const [selectedInvoiceOrderCode, setSelectedInvoiceOrderCode] = useState<string | null>(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
 
   // Admin Review Management State
   const [adminReviews, setAdminReviews] = useState<any[]>([]);
@@ -834,6 +837,8 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
               handleUpdateOrderStatus={handleUpdateOrderStatus}
               setSelectedOrderCode={setSelectedOrderCode}
               setIsDetailModalOpen={setIsDetailModalOpen}
+              setSelectedInvoiceOrderCode={setSelectedInvoiceOrderCode}
+              setIsInvoiceModalOpen={setIsInvoiceModalOpen}
             />
           )}
 
@@ -1127,6 +1132,20 @@ export default function AdminDashboardPage({ onNavigate, user, showToast, onLogo
         onClose={() => {
           setIsDetailModalOpen(false);
           setSelectedOrderCode(null);
+        }}
+        onPrintInvoice={(code) => {
+          setSelectedInvoiceOrderCode(code);
+          setIsInvoiceModalOpen(true);
+        }}
+      />
+
+      {/* Admin Order Invoice Modal */}
+      <OrderInvoiceModal
+        orderCode={selectedInvoiceOrderCode}
+        isOpen={isInvoiceModalOpen}
+        onClose={() => {
+          setIsInvoiceModalOpen(false);
+          setSelectedInvoiceOrderCode(null);
         }}
       />
 
